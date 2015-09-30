@@ -62,6 +62,13 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 #endif
 }
 
+// helper function for sortControlPoints()
+// Author: Michael Jiao (mj498)
+bool compareControlPoints(CurvePoint i, CurvePoint j)
+{
+	return (i.time < j.time);
+}
+
 // Sort controlPoints vector in ascending order: min-first
 void Curve::sortControlPoints()
 {
@@ -77,8 +84,7 @@ void Curve::sortControlPoints()
 	//=========================================================================
 
 	// sort using a lambda which defines how to order the points with respect to time.
-	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(),
-		[](Util::CurvePoint const& first, Util::CurvePoint const& second) { return first.time < second.time; });
+	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(), compareControlPoints);
 
 	return;
 }
