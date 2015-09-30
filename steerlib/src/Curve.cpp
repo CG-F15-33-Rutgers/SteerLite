@@ -66,13 +66,19 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 void Curve::sortControlPoints()
 {
 	//================DELETE THIS PART AND THEN START CODING===================
+	/*
 	static bool flag = false;
 	if (!flag)
 	{
 		std::cerr << "ERROR>>>>Member function sortControlPoints is not implemented!" << std::endl;
 		flag = true;
 	}
+	*/
 	//=========================================================================
+
+	// sort using a lambda which defines how to order the points with respect to time.
+	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(),
+		[](Util::CurvePoint const& first, Util::CurvePoint const& second) { return first.time < second.time; });
 
 	return;
 }
@@ -110,35 +116,46 @@ bool Curve::calculatePoint(Point& outputPoint, float time)
 bool Curve::checkRobust()
 {
 	//================DELETE THIS PART AND THEN START CODING===================
+	/*
 	static bool flag = false;
 	if (!flag)
 	{
 		std::cerr << "ERROR>>>>Member function checkRobust is not implemented!" << std::endl;
 		flag = true;
 	}
+	*/
 	//=========================================================================
-
+	if (Curve::controlPoints.size() < 2) {
+		return false;
+	}
 
 	return true;
 }
 
 // Find the current time interval (i.e. index of the next control point to follow according to current time)
+// unsigned int& nextPoint is the index of next point in vector 
 bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 {
 	//================DELETE THIS PART AND THEN START CODING===================
+	/*
 	static bool flag = false;
 	if (!flag)
 	{
 		std::cerr << "ERROR>>>>Member function findTimeInterval is not implemented!" << std::endl;
 		flag = true;
-	}
+	}*/
 	//=========================================================================
-
+	for (int i = 0; i < Curve::controlPoints.size()-1; i++) {
+		if (time >= Curve::controlPoints.at(i).time && time <= Curve::controlPoints.at(i + 1).time) {
+			nextPoint = (i + 1);
+		}
+	}
 
 	return true;
 }
 
 // Implement Hermite curve
+// const unsigned int nextPoint is index in vector that contains nextPoint
 Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 {
 	Point newPosition;
