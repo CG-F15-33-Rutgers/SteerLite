@@ -39,4 +39,4 @@ Thumbs.db
 # Release #
 ###########
 
-build/win32/Release/
+build
