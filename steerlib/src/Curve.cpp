@@ -62,6 +62,13 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 #endif
 }
 
+// helper function for sortControlPoints()
+// Author: Michael Jiao (mj498)
+bool compareControlPoints(CurvePoint i, CurvePoint j)
+{
+	return (i.time < j.time);
+}
+
 // Sort controlPoints vector in ascending order: min-first
 void Curve::sortControlPoints()
 {
@@ -77,8 +84,7 @@ void Curve::sortControlPoints()
 	//=========================================================================
 
 	// sort using a lambda which defines how to order the points with respect to time.
-	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(),
-		[](Util::CurvePoint const& first, Util::CurvePoint const& second) { return first.time < second.time; });
+	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(), compareControlPoints);
 
 	return;
 }
@@ -148,10 +154,11 @@ bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 	for (int i = 0; i < Curve::controlPoints.size()-1; i++) {
 		if (time >= Curve::controlPoints.at(i).time && time <= Curve::controlPoints.at(i + 1).time) {
 			nextPoint = (i + 1);
+			return true;
 		}
 	}
 
-	return true;
+	return false;
 }
 
 // Implement Hermite curve
@@ -162,18 +169,39 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	float normalTime, intervalTime;
 
 	//================DELETE THIS PART AND THEN START CODING===================
+	/*
 	static bool flag = false;
 	if (!flag)
 	{
-		std::cerr << "ERROR>>>>Member function useHermiteCurve is not implemented!" << std::endl;
-		flag = true;
+	std::cerr << "ERROR>>>>Member function useHermiteCurve is not implemented!" << std::endl;
+	flag = true;
 	}
+	*/
 	//=========================================================================
 
+	Point p1 = Curve::controlPoints.at(nextPoint - 1).position;
+	Vector t1 = Curve::controlPoints.at(nextPoint - 1).tangent;
+	Point p2 = Curve::controlPoints.at(nextPoint).position;
+	Vector t2 = Curve::controlPoints.at(nextPoint).tangent;
 
 	// Calculate time interval, and normal time required for later curve calculations
+	float time1 = Curve::controlPoints.at(nextPoint - 1).time;
+	float time2 = Curve::controlPoints.at(nextPoint).time;
+
+	normalTime = time - time1;
+	intervalTime = time2 - time1;
+
+	// scale s to go from 0 to 1
+	float s = normalTime / intervalTime;
+
+	// calculate basis functions
+	float h1 = 2 * s*s*s - 3 * s*s + 1;
+	float h2 = -2 * s*s*s + 3 * s*s;
+	float h3 = s*s*s - 2 * s*s + s;
+	float h4 = s*s*s - s*s;
 
 	// Calculate position at t = time on Hermite curve
+	newPosition = h1*p1 + h2*p2 + h3*t1 + h4*t2;
 
 	// Return result
 	return newPosition;
