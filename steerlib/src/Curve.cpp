@@ -151,7 +151,7 @@ bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 		flag = true;
 	}*/
 	//=========================================================================
-	for (int i = 0; i < Curve::controlPoints.size()-1; i++) {
+	for (int i = 0; i < Curve::controlPoints.size() - 1; i++) {
 		if (time >= Curve::controlPoints.at(i).time && time <= Curve::controlPoints.at(i + 1).time) {
 			nextPoint = (i + 1);
 			return true;
@@ -211,21 +211,62 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 {
 	Point newPosition;
-
+	float normalTime, intervalTime;
 	//================DELETE THIS PART AND THEN START CODING===================
+	/*
 	static bool flag = false;
 	if (!flag)
 	{
 		std::cerr << "ERROR>>>>Member function useCatmullCurve is not implemented!" << std::endl;
 		flag = true;
 	}
+	*/
 	//=========================================================================
 
-
+	Vector t1;
+	Vector t2;
+	Point p1 = Curve::controlPoints.at(nextPoint - 1).position;
+	Point p2 = Curve::controlPoints.at(nextPoint).position;
+	Point p3;
 	// Calculate time interval, and normal time required for later curve calculations
+	float time1 = Curve::controlPoints.at(nextPoint - 1).time;
+	float time2 = Curve::controlPoints.at(nextPoint).time;
 
+	normalTime = time - time1;
+	intervalTime = time2 - time1;
+
+	// scale s to go from 0 to 1
+	float s = normalTime / intervalTime;
 	// Calculate position at t = time on Catmull-Rom curve
-	
+
+	// need to check if we are at boundary conditions
+	if (nextPoint == 1) {
+		p3 = Curve::controlPoints.at(nextPoint + 1).position;
+		t1 = 2 * ((p2 - p1) / s) - ((p3 - p2) / (2 * s));
+		t2 = (p3 - p1) / (2 * s);
+	}
+	else if (nextPoint == (Curve::controlPoints.size() - 1)) {
+		p3 = Curve::controlPoints.at(nextPoint - 2).position;
+		t1 = (p2 - p3) / (2 * s);
+		t2 = t1 - 2 * ((p1 - p3) / s);
+	}
+	else {
+		p3 = Curve::controlPoints.at(nextPoint - 2).position;
+		t1 = (p2 - p3) / (2 * s);
+		p3 = Curve::controlPoints.at(nextPoint + 1).position;
+		t2 = (p3 - p1) / (2 * s);
+	}
+
+	// Calculate hermite curve again using computed tangents
+	// calculate basis functions
+	float h1 = 2 * s*s*s - 3 * s*s + 1;
+	float h2 = -2 * s*s*s + 3 * s*s;
+	float h3 = s*s*s - 2 * s*s + s;
+	float h4 = s*s*s - s*s;
+
+	// Calculate position at t = time on Hermite curve
+	newPosition = h1*p1 + h2*p2 + h3*t1 + h4*t2;
+
 	// Return result
 	return newPosition;
 }
