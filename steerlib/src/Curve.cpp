@@ -40,24 +40,36 @@ void Curve::addControlPoints(const std::vector<CurvePoint>& inputPoints)
 	sortControlPoints();
 }
 
-// Draw the curve shape on screen, usign window as step size (bigger window: less accurate shape)
 void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 {
 #ifdef ENABLE_GUI
 
 	//================DELETE THIS PART AND THEN START CODING===================
+	/*
 	static bool flag = false;
 	if (!flag)
 	{
-		std::cerr << "ERROR>>>>Member function drawCurve is not implemented!" << std::endl;
-		flag = true;
+	std::cerr << "ERROR>>>>Member function drawCurve is not implemented!" << std::endl;
+	flag = true;
 	}
+	*/
 	//=========================================================================
 
 	// Robustness: make sure there is at least two control point: start and end points
+	if (!checkRobust())
+		return;
+
+	float endTime = Curve::controlPoints.back().time;
+	Util::Point newPosition;
 
 	// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
-	
+	for (int i = 0; i < endTime + window; i = i + window) {
+		Util::Point firstPoint = newPosition;
+		Curve::calculatePoint(newPosition, i);
+		DrawLib::drawLine(firstPoint, newPosition, curveColor, curveThickness);
+	}
+
+
 	return;
 #endif
 }
