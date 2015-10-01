@@ -200,7 +200,7 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	float time1 = Curve::controlPoints.at(nextPoint - 1).time;
 	float time2 = Curve::controlPoints.at(nextPoint).time;
 
-	normalTime = time - time1;
+	normalTime = time;
 	intervalTime = time2 - time1;
 
 	// scale s to go from 0 to 1
@@ -243,7 +243,7 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	// Calculate time interval, and normal time required for later curve calculations
 	float time1 = Curve::controlPoints.at(nextPoint - 1).time;
 	float time2 = Curve::controlPoints.at(nextPoint).time;
-
+	
 	normalTime = time - time1;
 	intervalTime = time2 - time1;
 
@@ -254,19 +254,19 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	// need to check if we are at boundary conditions
 	if (nextPoint == 1) {
 		p3 = Curve::controlPoints.at(nextPoint + 1).position;
-		t1 = 2 * ((p2 - p1) / s) - ((p3 - p2) / (2 * s));
-		t2 = (p3 - p1) / (2 * s);
+		t1 = 2 * ((p2 - p1)) - ((p3 - p1) / 2);
+		t2 = (p3 - p1) / 2;
 	}
 	else if (nextPoint == (Curve::controlPoints.size() - 1)) {
 		p3 = Curve::controlPoints.at(nextPoint - 2).position;
-		t1 = (p2 - p3) / (2 * s);
-		t2 = t1 - 2 * ((p1 - p3) / s);
+		t1 = (p2 - p3) / 2;
+		t2 = (t1) - (2 * ((p1 - p2)));
 	}
 	else {
 		p3 = Curve::controlPoints.at(nextPoint - 2).position;
-		t1 = (p2 - p3) / (2 * s);
+		t1 = (p2 - p3) / 2;
 		p3 = Curve::controlPoints.at(nextPoint + 1).position;
-		t2 = (p3 - p1) / (2 * s);
+		t2 = (p3 - p1) / 2;
 	}
 
 	// Calculate hermite curve again using computed tangents
