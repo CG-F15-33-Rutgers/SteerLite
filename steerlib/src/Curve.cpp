@@ -60,7 +60,7 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 		return;
 
 	float endTime = Curve::controlPoints.back().time;
-	Util::Point newPosition;
+	Util::Point newPosition = Curve::controlPoints.front().position;
 
 	// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
 	for (int i = 0; i < endTime + window; i = i + window) {
@@ -200,7 +200,7 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	float time1 = Curve::controlPoints.at(nextPoint - 1).time;
 	float time2 = Curve::controlPoints.at(nextPoint).time;
 
-	normalTime = time;
+	normalTime = time - time1;
 	intervalTime = time2 - time1;
 
 	// scale s to go from 0 to 1
