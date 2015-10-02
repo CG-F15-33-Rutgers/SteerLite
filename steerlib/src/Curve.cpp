@@ -98,6 +98,12 @@ void Curve::sortControlPoints()
 	// sort using a lambda which defines how to order the points with respect to time.
 	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(), compareControlPoints);
 
+	for (int i = 0; i < Curve::controlPoints.size() - 1; i++) {
+		if (Curve::controlPoints.at(i).time == Curve::controlPoints.at(i + 1).time) {
+			Curve::controlPoints.erase(Curve::controlPoints.begin() + i + 1);
+		}
+	}
+
 	return;
 }
 
