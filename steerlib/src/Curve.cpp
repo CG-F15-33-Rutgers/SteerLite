@@ -89,14 +89,19 @@ void Curve::sortControlPoints()
 	static bool flag = false;
 	if (!flag)
 	{
-		std::cerr << "ERROR>>>>Member function sortControlPoints is not implemented!" << std::endl;
-		flag = true;
+	std::cerr << "ERROR>>>>Member function sortControlPoints is not implemented!" << std::endl;
+	flag = true;
 	}
 	*/
 	//=========================================================================
 
-	// sort using a lambda which defines how to order the points with respect to time.
 	std::sort(Curve::controlPoints.begin(), Curve::controlPoints.end(), compareControlPoints);
+
+	for (int i = 0; i < Curve::controlPoints.size() - 1; i++) {
+		if (Curve::controlPoints.at(i).time == Curve::controlPoints.at(i + 1).time) {
+			Curve::controlPoints.erase(Curve::controlPoints.begin() + i + 1);
+		}
+	}
 
 	return;
 }
@@ -172,7 +177,7 @@ bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 
 	return false;
 }
-
+ 
 // Implement Hermite curve
 // const unsigned int nextPoint is index in vector that contains nextPoint
 Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
