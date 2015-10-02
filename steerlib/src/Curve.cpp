@@ -65,7 +65,7 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 	// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
 	for (int i = 0; i < endTime + window; i = i + window) {
 		Util::Point firstPoint = newPosition;
-		Curve::calculatePoint(newPosition, i);
+		Curve::calculatePoint(newPosition, (float)i);
 		DrawLib::drawLine(firstPoint, newPosition, curveColor, curveThickness);
 	}
 
@@ -219,7 +219,7 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	float h4 = s*s*s - s*s;
 
 	// Calculate position at t = time on Hermite curve
-	newPosition = h1*p1 + h2*p2 + h3*t1 + h4*t2;
+	newPosition = h1*p1 + h2*p2 + h3*t1*intervalTime + h4*t2*intervalTime;
 
 	// Return result
 	return newPosition;
@@ -282,7 +282,7 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	float h3 = s*s*s - 2 * s*s + s;
 	float h4 = s*s*s - s*s;
 
-	// Calculate position at t = time on Hermite curve
+	// Calculate position at t = time on Catmull-Rom curve
 	newPosition = h1*p1 + h2*p2 + h3*t1 + h4*t2;
 
 	// Return result
