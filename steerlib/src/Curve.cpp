@@ -218,7 +218,7 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	float h4 = s*s*s - s*s;
 
 	// Calculate position at t = time on Hermite curve
-	newPosition = h1*p1 + h2*p2 + h3*t1 + h4*t2;
+	newPosition = h1*p1 + h2*p2 + h3*t1*intervalTime + h4*t2*intervalTime;
 
 	// Return result
 	return newPosition;
