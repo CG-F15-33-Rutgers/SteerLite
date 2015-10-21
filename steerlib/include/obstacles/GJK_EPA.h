@@ -127,6 +127,11 @@ namespace SteerLib
              *  DO NOT MODIFY polygon1.xml
              */
             static bool intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
+			static bool GJK(const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
+			static Util::Vector support(const std::vector<Util::Vector>& _shape, Util::Vector initial_axis);
+			static float dotProduct3d(Util::Vector vector1, Util::Vector vector2);
+			static Util::Vector crossProduct3d(Util::Vector vector1, Util::Vector vector2);
+			static bool containsOrigin(std::vector<Util::Vector> simplex);
 
         private:
 
