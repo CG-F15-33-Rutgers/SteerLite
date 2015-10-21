@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Compiled source #
 ###################
 *.com
@@ -40,3 +41,44 @@ Thumbs.db
 ###########
 
 build
+=======
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Release or Debug folders
+**/[rR]elease/
+**/[dD]ebug/
+**/.vs/
+**/x64/
+**/x86/
+
+# SDF files
+**/*.opensdf
+**/*.sdf
+>>>>>>> 052a627bf3505774e955b54d564d5470c78f7047
