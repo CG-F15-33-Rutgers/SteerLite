@@ -7,7 +7,6 @@
 
 #include "obstacles/GJK_EPA.h"
 
-
 SteerLib::GJK_EPA::GJK_EPA()
 {
 }
@@ -18,7 +17,23 @@ Util::Vector d;
 //Look at the GJK_EPA.h header file for documentation and instructions
 bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
-	return GJK(_shapeA, _shapeB);
+	// run decomposition
+	std::vector<std::vector<Util::Vector>> triangleListA = decompose(_shapeA);
+	std::vector<std::vector<Util::Vector>> triangleListB = decompose(_shapeB);
+
+	bool collision = false;
+
+	// check GJK for every triangle in B with every triangle in A
+	for (int i = 0; i < triangleListA.size(); i++) {
+		for (int j = 0; j < triangleListB.size(); j++) {
+			if (GJK(triangleListA.at(i), triangleListB.at(j))) {
+				collision = true;
+			}
+		}
+	}
+
+	// return result of GJK over decomposed convex sets
+	return collision;
 }
 
 bool SteerLib::GJK_EPA::GJK(const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
@@ -160,4 +175,166 @@ bool SteerLib::GJK_EPA::containsOrigin(std::vector<Util::Vector> simplex)
 		d = abNormal;
 	}
 	return false;
+}
+
+// uses ear-clipping method, so won't work on polygons with holes, and is relatively slow at O(n^2)
+// assumes size of _shape is at least 3
+std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<Util::Vector> _shape)
+{
+	// list of triangles that _shape decomposed into
+	std::vector<std::vector<Util::Vector>> triangleList;
+
+	// temporary shape that can be modified
+	std::vector<Util::Vector> tempShape = _shape;
+
+	// start the search at any point
+	int shapePos = 0;
+
+	// loop until there are only 3 points left in tempShape
+	// the loop will find ears in tempShape, and remove the ear, so the number of points in tempShape slowly decreases
+	while (tempShape.size() > 3) {
+		// get the first point, and the two points adjacent to it
+		Util::Vector point = tempShape.at(shapePos);
+
+		// get the predecessor, if shapePos is 0, get the back of tempShape
+		Util::Vector predecessor;
+		if (shapePos == 0) {
+			predecessor = tempShape.back();
+		}
+		else {
+			predecessor = tempShape.at(shapePos - 1);
+		}
+
+		// get the predecessor, if shapePos is the end, get the front of tempShape
+		Util::Vector successor;
+		if (shapePos == tempShape.size()) {
+			successor = tempShape.front();
+		}
+		else {
+			successor = tempShape.at(shapePos + 1);
+		}
+
+		// find the angle of the first point
+		Util::Vector line1 = predecessor - point;
+		Util::Vector line2 = successor - point;
+		float angle = findAngle(line1, line2);
+		
+		// if the angle is less than 180, it is possible for an ear to exist
+		if (angle < M_PI && angle > -M_PI) {
+			// make another temporary shape that does not include the point and it's adjacent points
+			std::vector<Util::Vector> triangleShape = tempShape;
+
+			int remove = indexOf(triangleShape, predecessor);
+			triangleShape.erase(triangleShape.begin() + remove);
+			remove = indexOf(triangleShape, point);
+			triangleShape.erase(triangleShape.begin() + remove);
+			remove = indexOf(triangleShape, successor);
+			triangleShape.erase(triangleShape.begin() + remove);
+
+			// check if any points in tempShape are in the triangle formed by the point and it's adjacent points
+			// if no points are in the triangle, then the point and it's adjacent points form an ear
+			if (!checkTriangle(triangleShape, predecessor, point, successor)) {
+				// construct the ear
+				std::vector<Util::Vector> ear;
+				ear.push_back(predecessor);
+				ear.push_back(point);
+				ear.push_back(successor);
+
+				// add the ear to the list of decomposed triangles
+				triangleList.push_back(ear);
+
+				// remove the point from tempShape since no other triangles in the decomposition can use it
+				remove = indexOf(tempShape, point);
+				tempShape.erase(tempShape.begin() + remove);
+			}
+			// there is another point inside the triangle, so it's not an ear
+			// move on to the next position
+			else {
+				shapePos++;
+				// if shapePos reaches the end, loop back to the beginning
+				if (shapePos == tempShape.size()) {
+					shapePos = 0;
+				}
+			}
+
+		}
+		// if the angle is 180, then the point and it's adjacent points forms a line
+		// the point can be removed from tempShape
+		else if (angle == M_PI || angle == -M_PI) {
+
+			int remove = indexOf(tempShape, point);
+			tempShape.erase(tempShape.begin() + remove);
+		}
+		// if the angle is greater than 180, it can't be an ear
+		// move on to the next position
+		else {
+			shapePos++;
+			// if shapePos reaches the end, loop back to the beginning
+			if (shapePos == tempShape.size()) {
+				shapePos = 0;
+			}
+		}
+
+	}
+	// since there are only 3 points left in tempShape, it must form a triangle in the decomposition
+	triangleList.push_back(tempShape);
+
+	return triangleList;
+}
+
+// find the angle formed between 2 vectors
+float SteerLib::GJK_EPA::findAngle(Util::Vector vector1, Util::Vector vector2)
+{
+	float dot = dotProduct3d(vector1, vector2);
+	float det = vector1.x * vector2.z - vector1.z *vector2.x;
+	float theta = std::atan2(det, dot);
+	return theta;
+}
+
+// returns the index of point in _shape
+int SteerLib::GJK_EPA::indexOf(std::vector<Util::Vector> _shape, Util::Vector point)
+{
+	int pos = -1;
+	for (int i = 0; i < _shape.size(); i++) {
+		if (_shape.at(i) == point) {
+			pos = i;
+		}
+	}
+	return pos;
+}
+
+// checks if any point in _shape is inside the triangle formed by point and it's adjacent points
+bool SteerLib::GJK_EPA::checkTriangle(std::vector<Util::Vector> _shape, Util::Vector predecessor, Util::Vector point, Util::Vector successor)
+{
+	for (int i = 0; i < _shape.size(); i++) {
+		// checks if shapePoint at i is inside the triangle formed by point and it's adjacent points
+		if (pointInTriangle(_shape.at(i), predecessor, point, successor)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// checks if shapePoint is inside the triangle formed by point and it's adjacent points
+bool SteerLib::GJK_EPA::pointInTriangle(Util::Vector shapePoint, Util::Vector predecessor, Util::Vector point, Util::Vector successor)
+{
+	bool b1, b2, b3;
+
+	// which side is point on for vector point-predecessor?
+	b1 = sign(shapePoint, predecessor, point) < 0.0f;
+
+	// which side is point on for vector successor-point?
+	b2 = sign(shapePoint, point, successor) < 0.0f;
+
+	// which side is point on for vector predecessor-successor?
+	b3 = sign(shapePoint, successor, predecessor) < 0.0f;
+
+	// if point is to the same side of all 3 vectors, the point is inside the triangle formed by those 3 vectors
+	return ((b1 == b2) && (b2 == b3));
+}
+
+// use the sign of the determinant of vectors AB and AP to see which side P is on
+float SteerLib::GJK_EPA::sign(Util::Vector p, Util::Vector a, Util::Vector b)
+{
+	return (p.x - a.x) * (b.z - a.z) - (b.x - a.x) * (p.z - a.z);
 }

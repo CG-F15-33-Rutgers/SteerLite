@@ -14,7 +14,6 @@
 
 #include <vector>
 
-
 namespace SteerLib
 {
 
@@ -127,11 +126,19 @@ namespace SteerLib
              *  DO NOT MODIFY polygon1.xml
              */
             static bool intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
+			
 			static bool GJK(const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
 			static Util::Vector support(const std::vector<Util::Vector>& _shape, Util::Vector initial_axis);
 			static float dotProduct3d(Util::Vector vector1, Util::Vector vector2);
 			static Util::Vector crossProduct3d(Util::Vector vector1, Util::Vector vector2);
 			static bool containsOrigin(std::vector<Util::Vector> simplex);
+
+			static std::vector<std::vector<Util::Vector>> decompose(std::vector<Util::Vector> _shape);
+			static float findAngle(Util::Vector vector1, Util::Vector vector2);
+			static int indexOf(std::vector<Util::Vector> _shape, Util::Vector point);
+			static bool checkTriangle(std::vector<Util::Vector> _shape, Util::Vector predecessor, Util::Vector point, Util::Vector successor);
+			static bool pointInTriangle(Util::Vector shapePoint, Util::Vector predecessor, Util::Vector point, Util::Vector successor);
+			static float sign(Util::Vector p1, Util::Vector p2, Util::Vector p3);
 
         private:
 
