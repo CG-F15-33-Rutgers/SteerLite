@@ -19,12 +19,12 @@ bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector&
 {
 	std::vector<Util::Vector> masterSimplex;
 	// run decomposition
-	
+	/*
 	std::vector<std::vector<Util::Vector>> triangleListA = decompose(_shapeA);
 	std::vector<std::vector<Util::Vector>> triangleListB = decompose(_shapeB);
-	
+	*/
 	bool collision = false;
-	
+	/*
 	// check GJK for every triangle in B with every triangle in A
 	for (int i = 0; i < triangleListA.size(); i++) {
 		for (int j = 0; j < triangleListB.size(); j++) {
@@ -33,7 +33,8 @@ bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector&
 			}
 		}
 	}
-	
+	*/
+	collision = GJK(masterSimplex, _shapeA, _shapeB);
 	
 	// return result of EPA over total decomposed convex sets
 	if (collision) {
@@ -46,7 +47,7 @@ bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector&
 	return collision;
 }
 
-bool SteerLib::GJK_EPA::GJK(std::vector<Util::Vector>& masterSimplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
+bool SteerLib::GJK_EPA::GJK(std::vector<Util::Vector>& simplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
 	// choose any initial d vector
 	d = Util::Vector(1, 0, 0);
@@ -54,10 +55,10 @@ bool SteerLib::GJK_EPA::GJK(std::vector<Util::Vector>& masterSimplex, const std:
 	// get the first Minkowski Difference point
 	Util::Vector minkowskiDiffPoint = support(_shapeA, d) - support(_shapeB, -d);
 
-	std::vector<Util::Vector> simplex;
+	//std::vector<Util::Vector> simplex;
 	// add the point to the simplex
 	simplex.push_back(minkowskiDiffPoint);
-	masterSimplex.push_back(minkowskiDiffPoint);
+
 
 	// negate d for next point
 	d = -d;
@@ -69,7 +70,7 @@ bool SteerLib::GJK_EPA::GJK(std::vector<Util::Vector>& masterSimplex, const std:
 		// add a new point to the simplex because we haven't terminated yet
 		minkowskiDiffPoint = support(_shapeA, d) - support(_shapeB, -d);
 		simplex.push_back(minkowskiDiffPoint);
-		masterSimplex.push_back(minkowskiDiffPoint);
+		
 
 		// make sure that the last point added is past the origin
 		if (dotProduct3d(minkowskiDiffPoint, d) < 0) {
@@ -452,21 +453,31 @@ float SteerLib::GJK_EPA::sign(Util::Vector p, Util::Vector a, Util::Vector b)
 	return (p.x - a.x) * (b.z - a.z) - (b.x - a.x) * (p.z - a.z);
 }
 
+Util::Vector SteerLib::GJK_EPA::normalize(Util::Vector vec)
+{
+	Util::Vector normalized;
+	float norm = vec.norm();
+
+	normalized = *(new Util::Vector((vec.x / norm), (vec.y / norm), (vec.z / norm)));
+	return normalized;
+}
+
 float SteerLib::GJK_EPA::EPA(std::vector<Util::Vector>& simplex, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
 	float distEdge;
-	const float THRESHOLD = 0.001;
+	const float THRESHOLD = 0.00000001;
 	while (true)
 	{
 		distEdge = closestMinkEdge(simplex, return_penetration_vector);
+		Util::Vector edgeNormal = normalize(return_penetration_vector);
 
-		Util::Vector supportPoint = support(_shapeA, return_penetration_vector) - support(_shapeB, -return_penetration_vector);
+		Util::Vector supportPoint = support(_shapeA, edgeNormal) - support(_shapeB, -edgeNormal);
 
 		// find distance from origin to support point
-		float distSupport = dotProduct3d(supportPoint, return_penetration_vector);
+		float distSupport = dotProduct3d(supportPoint, edgeNormal);
 
 		// now, we compare the difference between distances by the THRESHOLD
-		if (distSupport - distEdge < THRESHOLD) {
+		if (std::abs(distSupport - distEdge) < THRESHOLD) {
 			return distSupport;
 		}
 		else {
@@ -496,14 +507,15 @@ float SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex, Uti
 		Util::Vector edge = vecj - veci;
 
 		// this takes the edge vector and obtains a vector pointing to origin from edge
-		Util::Vector edgeNorm = crossProduct3d(crossProduct3d(edge, veci), edge);
-		edgeNorm.norm();
+		Util::Vector edgeVec = crossProduct3d(crossProduct3d(edge, veci), edge);
+		Util::Vector edgeNorm = normalize(edgeVec);
+		
+		
+		dist = dotProduct3d(veci, edgeNorm);
 
-		dist = dotProduct3d(edgeNorm, veci);
-
-		if (dist < closestDist) {
+		if (std::abs(dist) < closestDist) {
 			closestDist = dist;
-			return_penetration_vector = edgeNorm;
+			return_penetration_vector = edgeVec;
 		}
 
 
