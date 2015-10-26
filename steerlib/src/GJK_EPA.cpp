@@ -187,12 +187,37 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 	// temporary shape that can be modified
 	std::vector<Util::Vector> tempShape = _shape;
 
+	int count = crossProductCount(_shape);
+	
+	// if absolute value of count is same as size of shape, then shape is convex
+	if (std::abs(count) == _shape.size()) {
+		triangleList.push_back(_shape);
+		return triangleList;
+	}
+
+	bool isCCW;
+
+	// if count > 0, shape is ordered ccw
+	if (count > 0) {
+		isCCW = true;
+	}
+	// if count < 0, shape is ordered cw
+	else if (count < 0) {
+		isCCW = false;
+	}
+
 	// start the search at any point
 	int shapePos = 0;
 
 	// loop until there are only 3 points left in tempShape
 	// the loop will find ears in tempShape, and remove the ear, so the number of points in tempShape slowly decreases
-	while (tempShape.size() > 3) {
+	while (tempShape.size() > 0) {
+		
+		// if shapePos reaches the end, loop back to the beginning
+		if (shapePos == tempShape.size()) {
+			shapePos = 0;
+		}
+
 		// get the first point, and the two points adjacent to it
 		Util::Vector point = tempShape.at(shapePos);
 
@@ -207,7 +232,7 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 
 		// get the predecessor, if shapePos is the end, get the front of tempShape
 		Util::Vector successor;
-		if (shapePos == tempShape.size()) {
+		if (shapePos == tempShape.size()-1) {
 			successor = tempShape.front();
 		}
 		else {
@@ -219,8 +244,18 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 		Util::Vector line2 = successor - point;
 		float angle = findAngle(line1, line2);
 		
-		// if the angle is less than 180, it is possible for an ear to exist
-		if (angle < M_PI && angle > -M_PI) {
+		bool angleBool;
+		// if shape is ccw, angles less than pi are positive
+		if (isCCW) {
+			angleBool = angle < M_PI && angle > 0;
+		}
+		// if shape is cw, angles less than pi are negative
+		else {
+			angleBool = angle > -M_PI && angle < 0;
+		}
+
+		// if the angle is less than pi, it is possible for an ear to exist
+		if (angleBool) {
 			// make another temporary shape that does not include the point and it's adjacent points
 			std::vector<Util::Vector> triangleShape = tempShape;
 
@@ -251,38 +286,103 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 			// move on to the next position
 			else {
 				shapePos++;
-				// if shapePos reaches the end, loop back to the beginning
-				if (shapePos == tempShape.size()) {
-					shapePos = 0;
-				}
 			}
 
 		}
-		// if the angle is 180, then the point and it's adjacent points forms a line
+		// if the angle is pi, then the point and it's adjacent points forms a line
 		// the point can be removed from tempShape
 		else if (angle == M_PI || angle == -M_PI) {
-
 			int remove = indexOf(tempShape, point);
 			tempShape.erase(tempShape.begin() + remove);
 		}
-		// if the angle is greater than 180, it can't be an ear
+		// if the angle is greater than pi, it can't be an ear
 		// move on to the next position
 		else {
 			shapePos++;
-			// if shapePos reaches the end, loop back to the beginning
-			if (shapePos == tempShape.size()) {
-				shapePos = 0;
-			}
+		}
+
+		if (tempShape.size() == 3) {
+			// since there are only 3 points left in tempShape, it must form a triangle in the decomposition
+			triangleList.push_back(tempShape);
+			tempShape.clear();
 		}
 
 	}
-	// since there are only 3 points left in tempShape, it must form a triangle in the decomposition
-	triangleList.push_back(tempShape);
+	
+
+	
+	for (int i = 0; i < triangleList.size(); i++) {
+		std::cout << "triangle " << i << "\n";
+		for (int j = 0; j < triangleList.at(i).size(); j++) {
+			std::cout << "point " << triangleList.at(i).at(j) << "\n";
+		}
+	}
+	
 
 	return triangleList;
 }
 
+// check how shape is ordered, either counterclockwise or clockwise, by using cross product on adjacent edges
+// check whether shape is convex by using cross product on adjacent edges
+int SteerLib::GJK_EPA::crossProductCount(std::vector<Util::Vector> _shape)
+{
+	int counter = 0;
+
+	Util::Vector point;
+	Util::Vector predecessor;
+	Util::Vector successor;
+
+	Util::Vector cross;
+
+	// check all pairs of adjacent edges
+	for (int i = 0; i < _shape.size(); i++) {
+		// get the point
+		point = _shape.at(i);
+
+		// get the predecessor
+		// if i is 0, then the predecessor is the last element
+		if (i == 0) {
+			predecessor = _shape.back();
+		}
+		else {
+			predecessor = _shape.at(i - 1);
+		}
+
+		// get the successor
+		// if i is the last element, then the successor is the first element
+		if (i == _shape.size() - 1) {
+			successor = _shape.front();
+		}
+		else {
+			successor = _shape.at(i + 1);
+		}
+
+		// get the cross product of the two adjacent edges
+		Util::Vector edge1 = point - predecessor;
+		Util::Vector edge2 = successor - point;
+		cross = crossProduct3d(edge1, edge2);
+
+		// if the cross product is positive, increase counter
+		if (cross.y > 0) {
+			counter++;
+		}
+		// if the cross product is negative, decrease counter
+		else if(cross.y < 0){
+			counter--;
+		}
+		// if cross product is 0, then vectors are parallel or at least one vector is 0
+		// counter does not move in this case
+	}
+	// counter is number of positive cross products - negative cross products
+	// if more positive cross products, shape is counterclockwise
+	// if more negative cross products, shape is clockwise
+	// if all cross products have same sign, shape is convex
+	return counter;
+}
+
 // find the angle formed between 2 vectors
+// range is from -pi to pi
+// angle is positive for ccw angles, and negative for cw angles
 float SteerLib::GJK_EPA::findAngle(Util::Vector vector1, Util::Vector vector2)
 {
 	float dot = dotProduct3d(vector1, vector2);

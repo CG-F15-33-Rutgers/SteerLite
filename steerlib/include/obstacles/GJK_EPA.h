@@ -134,6 +134,7 @@ namespace SteerLib
 			static bool containsOrigin(std::vector<Util::Vector> simplex);
 
 			static std::vector<std::vector<Util::Vector>> decompose(std::vector<Util::Vector> _shape);
+			static int crossProductCount(std::vector<Util::Vector> _shape);
 			static float findAngle(Util::Vector vector1, Util::Vector vector2);
 			static int indexOf(std::vector<Util::Vector> _shape, Util::Vector point);
 			static bool checkTriangle(std::vector<Util::Vector> _shape, Util::Vector predecessor, Util::Vector point, Util::Vector successor);
