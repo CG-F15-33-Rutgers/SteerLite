@@ -134,7 +134,8 @@ namespace SteerLib
 			static bool containsOrigin(std::vector<Util::Vector> simplex);
 
 			static float EPA(std::vector<Util::Vector>& simplex, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB);
-			static Util::Vector closestMinkEdge(std::vector<Util::Vector>& simplex);
+			static Util::Vector closestMinkEdge(std::vector<Util::Vector>& simplex, float& closestDist);
+			static Util::Vector getNormal(Util::Vector vec);
 			static Util::Vector normalize(Util::Vector vec);
 
 			static std::vector<std::vector<Util::Vector>> decompose(std::vector<Util::Vector> _shape);

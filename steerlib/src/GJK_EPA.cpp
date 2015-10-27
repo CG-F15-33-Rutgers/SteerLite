@@ -453,46 +453,59 @@ float SteerLib::GJK_EPA::sign(Util::Vector p, Util::Vector a, Util::Vector b)
 	return (p.x - a.x) * (b.z - a.z) - (b.x - a.x) * (p.z - a.z);
 }
 
+Util::Vector SteerLib::GJK_EPA::getNormal(Util::Vector vec)
+{
+	Util::Vector normal;
+	normal.x = vec.z;
+	normal.z = -vec.x;
+	normal.y = vec.y;
+
+	
+	return normal;
+}
+
 Util::Vector SteerLib::GJK_EPA::normalize(Util::Vector vec)
 {
 	Util::Vector normalized;
-	float norm = vec.norm();
+	float length = vec.length();
 
-	normalized = *(new Util::Vector((vec.x / norm), (vec.y / norm), (vec.z / norm)));
+
+	normalized = *(new Util::Vector((vec.x / length), (vec.y / length), (vec.z / length)));
+
 	return normalized;
 }
 
 float SteerLib::GJK_EPA::EPA(std::vector<Util::Vector>& simplex, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
-	float distEdge;
+	
 	float prevDist = FLT_MAX;
 
-	const float THRESHOLD = 0.0000001;
+	
+	const float THRESHOLD = 0.01;
 	while (true)
 	{
-		return_penetration_vector = closestMinkEdge(simplex);
+		return_penetration_vector = closestMinkEdge(simplex, prevDist);
 		
 
 		Util::Vector supportPoint = support(_shapeA, return_penetration_vector) - support(_shapeB, -return_penetration_vector);
 
 		// find distance from origin to support point
-		//float distSupport = dotProduct3d(supportPoint, return_penetration_vector);
-		float distSupport = supportPoint.length();
+		float dist = dotProduct3d(supportPoint, return_penetration_vector);
+		
 		// now, we compare the difference between distances by the THRESHOLD
-		if (std::abs(distSupport - prevDist) < THRESHOLD) {
-			return_penetration_vector = supportPoint;
-			return distSupport;
+		if (std::abs(dist - prevDist) < THRESHOLD) {
+			return dist;
 		}
 		else {
-			prevDist = distSupport;
+			prevDist = dist;
 			simplex.push_back(supportPoint);
 		}
 	}
 }
-Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex)
+Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex, float& closestDist)
 { 
-	float closestDist = FLT_MAX;
-	Util::Vector closestEdgeNorm;
+	closestDist = FLT_MAX;
+	Util::Vector closestEdgeNormal;
 
 	for (int i = 0; i < simplex.size(); i++) {
 
@@ -505,22 +518,41 @@ Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simpl
 			j = i + 1;
 		}
 
+		
+
 		// get an edge from mink diff by getting next two points
 		Util::Vector veci = simplex.at(i);
 		Util::Vector vecj = simplex.at(j);
-		
+	
 		Util::Vector edge = vecj - veci;
-
-		Util::Vector edgeNorm = normalize(edge);
 		
-		dist = dotProduct3d(veci, edgeNorm);
+		Util::Vector edgeVec = crossProduct3d(crossProduct3d(edge, veci), edge);
+
+		// try and avoid problems with origin being too close to edge
+		if (edgeVec.length() <= 0.1)
+		{
+			edgeVec = getNormal(edge);
+			
+		}
+
+		edgeVec = normalize(edgeVec);
+		
+		
+		
+		
+		
+		
+		// get distance of the edgeNormal
+		dist = dotProduct3d(veci, edgeVec);
+		
+	
 
 		if (std::abs(dist) < closestDist) {
 			closestDist = dist;
-			closestEdgeNorm = edgeNorm;
+			closestEdgeNormal = edgeVec;
 		}
 
 
 	}
-	return closestEdgeNorm;
+	return closestEdgeNormal;
 } 
