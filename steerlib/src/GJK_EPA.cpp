@@ -465,29 +465,34 @@ Util::Vector SteerLib::GJK_EPA::normalize(Util::Vector vec)
 float SteerLib::GJK_EPA::EPA(std::vector<Util::Vector>& simplex, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
 	float distEdge;
-	const float THRESHOLD = 0.00000001;
+	float prevDist = FLT_MAX;
+
+	const float THRESHOLD = 0.0000001;
 	while (true)
 	{
-		distEdge = closestMinkEdge(simplex, return_penetration_vector);
-		Util::Vector edgeNormal = normalize(return_penetration_vector);
+		return_penetration_vector = closestMinkEdge(simplex);
+		
 
-		Util::Vector supportPoint = support(_shapeA, edgeNormal) - support(_shapeB, -edgeNormal);
+		Util::Vector supportPoint = support(_shapeA, return_penetration_vector) - support(_shapeB, -return_penetration_vector);
 
 		// find distance from origin to support point
-		float distSupport = dotProduct3d(supportPoint, edgeNormal);
-
+		//float distSupport = dotProduct3d(supportPoint, return_penetration_vector);
+		float distSupport = supportPoint.length();
 		// now, we compare the difference between distances by the THRESHOLD
-		if (std::abs(distSupport - distEdge) < THRESHOLD) {
+		if (std::abs(distSupport - prevDist) < THRESHOLD) {
+			return_penetration_vector = supportPoint;
 			return distSupport;
 		}
 		else {
+			prevDist = distSupport;
 			simplex.push_back(supportPoint);
 		}
 	}
 }
-float SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex, Util::Vector& return_penetration_vector)
+Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex)
 { 
 	float closestDist = FLT_MAX;
+	Util::Vector closestEdgeNorm;
 
 	for (int i = 0; i < simplex.size(); i++) {
 
@@ -506,19 +511,16 @@ float SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex, Uti
 		
 		Util::Vector edge = vecj - veci;
 
-		// this takes the edge vector and obtains a vector pointing to origin from edge
-		Util::Vector edgeVec = crossProduct3d(crossProduct3d(edge, veci), edge);
-		Util::Vector edgeNorm = normalize(edgeVec);
-		
+		Util::Vector edgeNorm = normalize(edge);
 		
 		dist = dotProduct3d(veci, edgeNorm);
 
 		if (std::abs(dist) < closestDist) {
 			closestDist = dist;
-			return_penetration_vector = edgeVec;
+			closestEdgeNorm = edgeNorm;
 		}
 
 
 	}
-	return closestDist;
+	return closestEdgeNorm;
 } 
