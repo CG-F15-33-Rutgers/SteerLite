@@ -1,5 +1,5 @@
 /*!
-*
+* 
 * \author VaHiD AzIzI
 *
 */
@@ -17,26 +17,37 @@ Util::Vector d;
 //Look at the GJK_EPA.h header file for documentation and instructions
 bool SteerLib::GJK_EPA::intersect(float& return_penetration_depth, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
+	std::vector<Util::Vector> masterSimplex;
 	// run decomposition
+	/*
 	std::vector<std::vector<Util::Vector>> triangleListA = decompose(_shapeA);
 	std::vector<std::vector<Util::Vector>> triangleListB = decompose(_shapeB);
-
+	*/
 	bool collision = false;
-
+	/*
 	// check GJK for every triangle in B with every triangle in A
 	for (int i = 0; i < triangleListA.size(); i++) {
 		for (int j = 0; j < triangleListB.size(); j++) {
-			if (GJK(triangleListA.at(i), triangleListB.at(j))) {
+			if (GJK(masterSimplex, triangleListA.at(i), triangleListB.at(j))) {
 				collision = true;
 			}
 		}
 	}
-
+	*/
+	collision = GJK(masterSimplex, _shapeA, _shapeB);
+	
+	// return result of EPA over total decomposed convex sets
+	if (collision) {
+		return_penetration_depth = EPA(masterSimplex, return_penetration_vector, _shapeA, _shapeB);
+	}
+	else {
+		return_penetration_depth = 0.0;
+	}
 	// return result of GJK over decomposed convex sets
 	return collision;
 }
 
-bool SteerLib::GJK_EPA::GJK(const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
+bool SteerLib::GJK_EPA::GJK(std::vector<Util::Vector>& simplex, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
 {
 	// choose any initial d vector
 	d = Util::Vector(1, 0, 0);
@@ -44,9 +55,10 @@ bool SteerLib::GJK_EPA::GJK(const std::vector<Util::Vector>& _shapeA, const std:
 	// get the first Minkowski Difference point
 	Util::Vector minkowskiDiffPoint = support(_shapeA, d) - support(_shapeB, -d);
 
-	std::vector<Util::Vector> simplex;
+	//std::vector<Util::Vector> simplex;
 	// add the point to the simplex
 	simplex.push_back(minkowskiDiffPoint);
+
 
 	// negate d for next point
 	d = -d;
@@ -58,6 +70,7 @@ bool SteerLib::GJK_EPA::GJK(const std::vector<Util::Vector>& _shapeA, const std:
 		// add a new point to the simplex because we haven't terminated yet
 		minkowskiDiffPoint = support(_shapeA, d) - support(_shapeB, -d);
 		simplex.push_back(minkowskiDiffPoint);
+		
 
 		// make sure that the last point added is past the origin
 		if (dotProduct3d(minkowskiDiffPoint, d) < 0) {
@@ -77,6 +90,7 @@ bool SteerLib::GJK_EPA::GJK(const std::vector<Util::Vector>& _shapeA, const std:
 		}
 	}
 }
+
 
 // support function, returns point on shape with highest projection on vector d
 // in other words, the farthest point on the shape in the d direction
@@ -187,12 +201,37 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 	// temporary shape that can be modified
 	std::vector<Util::Vector> tempShape = _shape;
 
+	int count = crossProductCount(_shape);
+	
+	// if absolute value of count is same as size of shape, then shape is convex
+	if (std::abs(count) == _shape.size()) {
+		triangleList.push_back(_shape);
+		return triangleList;
+	}
+
+	bool isCCW;
+
+	// if count > 0, shape is ordered ccw
+	if (count > 0) {
+		isCCW = true;
+	}
+	// if count < 0, shape is ordered cw
+	else if (count < 0) {
+		isCCW = false;
+	}
+
 	// start the search at any point
 	int shapePos = 0;
 
 	// loop until there are only 3 points left in tempShape
 	// the loop will find ears in tempShape, and remove the ear, so the number of points in tempShape slowly decreases
-	while (tempShape.size() > 3) {
+	while (tempShape.size() > 0) {
+		
+		// if shapePos reaches the end, loop back to the beginning
+		if (shapePos == tempShape.size()) {
+			shapePos = 0;
+		}
+
 		// get the first point, and the two points adjacent to it
 		Util::Vector point = tempShape.at(shapePos);
 
@@ -207,7 +246,7 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 
 		// get the predecessor, if shapePos is the end, get the front of tempShape
 		Util::Vector successor;
-		if (shapePos == tempShape.size()) {
+		if (shapePos == tempShape.size()-1) {
 			successor = tempShape.front();
 		}
 		else {
@@ -219,8 +258,18 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 		Util::Vector line2 = successor - point;
 		float angle = findAngle(line1, line2);
 		
-		// if the angle is less than 180, it is possible for an ear to exist
-		if (angle < M_PI && angle > -M_PI) {
+		bool angleBool;
+		// if shape is ccw, angles less than pi are positive
+		if (isCCW) {
+			angleBool = angle < M_PI && angle > 0;
+		}
+		// if shape is cw, angles less than pi are negative
+		else {
+			angleBool = angle > -M_PI && angle < 0;
+		}
+
+		// if the angle is less than pi, it is possible for an ear to exist
+		if (angleBool) {
 			// make another temporary shape that does not include the point and it's adjacent points
 			std::vector<Util::Vector> triangleShape = tempShape;
 
@@ -251,38 +300,103 @@ std::vector<std::vector<Util::Vector>> SteerLib::GJK_EPA::decompose(std::vector<
 			// move on to the next position
 			else {
 				shapePos++;
-				// if shapePos reaches the end, loop back to the beginning
-				if (shapePos == tempShape.size()) {
-					shapePos = 0;
-				}
 			}
 
 		}
-		// if the angle is 180, then the point and it's adjacent points forms a line
+		// if the angle is pi, then the point and it's adjacent points forms a line
 		// the point can be removed from tempShape
 		else if (angle == M_PI || angle == -M_PI) {
-
 			int remove = indexOf(tempShape, point);
 			tempShape.erase(tempShape.begin() + remove);
 		}
-		// if the angle is greater than 180, it can't be an ear
+		// if the angle is greater than pi, it can't be an ear
 		// move on to the next position
 		else {
 			shapePos++;
-			// if shapePos reaches the end, loop back to the beginning
-			if (shapePos == tempShape.size()) {
-				shapePos = 0;
-			}
+		}
+
+		if (tempShape.size() == 3) {
+			// since there are only 3 points left in tempShape, it must form a triangle in the decomposition
+			triangleList.push_back(tempShape);
+			tempShape.clear();
 		}
 
 	}
-	// since there are only 3 points left in tempShape, it must form a triangle in the decomposition
-	triangleList.push_back(tempShape);
+	
+
+	
+	for (int i = 0; i < triangleList.size(); i++) {
+		std::cout << "triangle " << i << "\n";
+		for (int j = 0; j < triangleList.at(i).size(); j++) {
+			std::cout << "point " << triangleList.at(i).at(j) << "\n";
+		}
+	}
+	
 
 	return triangleList;
 }
 
+// check how shape is ordered, either counterclockwise or clockwise, by using cross product on adjacent edges
+// check whether shape is convex by using cross product on adjacent edges
+int SteerLib::GJK_EPA::crossProductCount(std::vector<Util::Vector> _shape)
+{
+	int counter = 0;
+
+	Util::Vector point;
+	Util::Vector predecessor;
+	Util::Vector successor;
+
+	Util::Vector cross;
+
+	// check all pairs of adjacent edges
+	for (int i = 0; i < _shape.size(); i++) {
+		// get the point
+		point = _shape.at(i);
+
+		// get the predecessor
+		// if i is 0, then the predecessor is the last element
+		if (i == 0) {
+			predecessor = _shape.back();
+		}
+		else {
+			predecessor = _shape.at(i - 1);
+		}
+
+		// get the successor
+		// if i is the last element, then the successor is the first element
+		if (i == _shape.size() - 1) {
+			successor = _shape.front();
+		}
+		else {
+			successor = _shape.at(i + 1);
+		}
+
+		// get the cross product of the two adjacent edges
+		Util::Vector edge1 = point - predecessor;
+		Util::Vector edge2 = successor - point;
+		cross = crossProduct3d(edge1, edge2);
+
+		// if the cross product is positive, increase counter
+		if (cross.y > 0) {
+			counter++;
+		}
+		// if the cross product is negative, decrease counter
+		else if(cross.y < 0){
+			counter--;
+		}
+		// if cross product is 0, then vectors are parallel or at least one vector is 0
+		// counter does not move in this case
+	}
+	// counter is number of positive cross products - negative cross products
+	// if more positive cross products, shape is counterclockwise
+	// if more negative cross products, shape is clockwise
+	// if all cross products have same sign, shape is convex
+	return counter;
+}
+
 // find the angle formed between 2 vectors
+// range is from -pi to pi
+// angle is positive for ccw angles, and negative for cw angles
 float SteerLib::GJK_EPA::findAngle(Util::Vector vector1, Util::Vector vector2)
 {
 	float dot = dotProduct3d(vector1, vector2);
@@ -338,3 +452,75 @@ float SteerLib::GJK_EPA::sign(Util::Vector p, Util::Vector a, Util::Vector b)
 {
 	return (p.x - a.x) * (b.z - a.z) - (b.x - a.x) * (p.z - a.z);
 }
+
+Util::Vector SteerLib::GJK_EPA::normalize(Util::Vector vec)
+{
+	Util::Vector normalized;
+	float norm = vec.norm();
+
+	normalized = *(new Util::Vector((vec.x / norm), (vec.y / norm), (vec.z / norm)));
+	return normalized;
+}
+
+float SteerLib::GJK_EPA::EPA(std::vector<Util::Vector>& simplex, Util::Vector& return_penetration_vector, const std::vector<Util::Vector>& _shapeA, const std::vector<Util::Vector>& _shapeB)
+{
+	float distEdge;
+	float prevDist = FLT_MAX;
+
+	const float THRESHOLD = 0.0000001;
+	while (true)
+	{
+		return_penetration_vector = closestMinkEdge(simplex);
+		
+
+		Util::Vector supportPoint = support(_shapeA, return_penetration_vector) - support(_shapeB, -return_penetration_vector);
+
+		// find distance from origin to support point
+		//float distSupport = dotProduct3d(supportPoint, return_penetration_vector);
+		float distSupport = supportPoint.length();
+		// now, we compare the difference between distances by the THRESHOLD
+		if (std::abs(distSupport - prevDist) < THRESHOLD) {
+			return_penetration_vector = supportPoint;
+			return distSupport;
+		}
+		else {
+			prevDist = distSupport;
+			simplex.push_back(supportPoint);
+		}
+	}
+}
+Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simplex)
+{ 
+	float closestDist = FLT_MAX;
+	Util::Vector closestEdgeNorm;
+
+	for (int i = 0; i < simplex.size(); i++) {
+
+		int j;
+		float dist;
+		if (i + 1 == simplex.size()) {
+			j = 0;
+		}
+		else {
+			j = i + 1;
+		}
+
+		// get an edge from mink diff by getting next two points
+		Util::Vector veci = simplex.at(i);
+		Util::Vector vecj = simplex.at(j);
+		
+		Util::Vector edge = vecj - veci;
+
+		Util::Vector edgeNorm = normalize(edge);
+		
+		dist = dotProduct3d(veci, edgeNorm);
+
+		if (std::abs(dist) < closestDist) {
+			closestDist = dist;
+			closestEdgeNorm = edgeNorm;
+		}
+
+
+	}
+	return closestEdgeNorm;
+} 
