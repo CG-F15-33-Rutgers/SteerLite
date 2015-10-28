@@ -493,7 +493,7 @@ float SteerLib::GJK_EPA::EPA(std::vector<Util::Vector>& simplex, Util::Vector& r
 		float dist = dotProduct3d(supportPoint, return_penetration_vector);
 		
 		// now, we compare the difference between distances by the THRESHOLD
-		if (std::abs(dist - prevDist) < THRESHOLD) {
+		if (dist - prevDist < THRESHOLD) {
 			return dist;
 		}
 		else {
@@ -529,7 +529,7 @@ Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simpl
 		Util::Vector edgeVec = crossProduct3d(crossProduct3d(edge, veci), edge);
 
 		// try and avoid problems with origin being too close to edge
-		if (edgeVec.length() <= 0.1)
+		if (edgeVec.length() <= 0.000001)
 		{
 			edgeVec = getNormal(edge);
 			
@@ -547,7 +547,7 @@ Util::Vector SteerLib::GJK_EPA::closestMinkEdge(std::vector<Util::Vector>& simpl
 		
 	
 
-		if (std::abs(dist) < closestDist) {
+		if (dist < closestDist) {
 			closestDist = dist;
 			closestEdgeNormal = edgeVec;
 		}
