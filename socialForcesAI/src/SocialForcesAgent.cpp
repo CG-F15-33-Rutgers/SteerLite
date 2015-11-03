@@ -237,17 +237,49 @@ std::pair<float, Util::Point> minimum_distance(Util::Point l1, Util::Point l2, U
 
 Util::Vector SocialForcesAgent::calcProximityForce(float dt)
 {
-    std::cerr<<"<<<calcProximityForce>>> Please Implement my body\n";
+    Util::Vector proximityForce = Util::Vector(0,0,0);
 
-    return Util::Vector(0,0,0);
+    std::set<SteerLib::SpatialDatabaseItemPtr> _neighbors;
+	gSpatialDatabase->getItemsInRange(_neighbors,
+		position().x - (radius() + _SocialForcesParams.sf_query_radius),
+		position().x + (radius() + _SocialForcesParams.sf_query_radius),
+		position().z - (radius() + _SocialForcesParams.sf_query_radius),
+		position().z + (radius() + _SocialForcesParams.sf_query_radius),
+		this);
+
+	for (std::set<SteerLib::SpatialDatabaseItemPtr>::iterator neighbor = _neighbors.begin();
+		neighbor != _neighbors.end(); neighbor++) {
+
+		if ((*neighbor)->isAgent()) {
+			SteerLib::AgentInterface *other = dynamic_cast<SteerLib::AgentInterface *>(*neighbor);
+			if (id() != other->id()) {
+				proximityForce += (_SocialForcesParams.sf_agent_a * exp(((radius()+other->radius())-(position()-other->position()).length())/_SocialForcesParams.sf_agent_b)) 
+				* normalize(position() - other->position());
+			}
+		}
+		else {
+			SteerLib::ObstacleInterface *wall = dynamic_cast<SteerLib::ObstacleInterface *>(*neighbor);
+			if (wall->computePenetration(position(), radius()) > 0.000001) {
+				Util::Vector wallNormal = calcWallNormal(wall);
+				std::pair<Util::Point, Util::Point> edge = calcWallPointsFromNormal(wall, wallNormal);
+
+				std::pair<float, Util::Point> distance = minimum_distance(edge.first, edge.second, position());
+
+				proximityForce += (_SocialForcesParams.sf_wall_a * exp( (radius()-distance.first) / _SocialForcesParams.sf_wall_b))
+				* normalize(position() - distance.second);
+			}
+		}
+
+	}
+
+    return proximityForce;
 }
 
 
 Vector SocialForcesAgent::calcGoalForce(Vector _goalDirection, float _dt)
 {
-    std::cerr<<"<<<calcGoalForce>>> Please Implement my body\n";
-
-    return Util::Vector(0,0,0);
+	Vector goalForce = ((_goalDirection * PERFERED_SPEED) - velocity()) / _dt;
+    return goalForce;
 }
 
 
@@ -263,17 +295,58 @@ Util::Vector SocialForcesAgent::calcRepulsionForce(float dt)
 
 Util::Vector SocialForcesAgent::calcAgentRepulsionForce(float dt)
 {
-    std::cerr<<"<<<calcAgentRepulsionForce>>> Please Implement my body\n";
+	Util::Vector agentRepulsionForce = Util::Vector(0,0,0);
 
-    return Util::Vector(0,0,0);
+	std::set<SteerLib::SpatialDatabaseItemPtr> _neighbors;
+	gSpatialDatabase->getItemsInRange(_neighbors,
+		position().x - (radius() + _SocialForcesParams.sf_query_radius),
+		position().x + (radius() + _SocialForcesParams.sf_query_radius),
+		position().z - (radius() + _SocialForcesParams.sf_query_radius),
+		position().z + (radius() + _SocialForcesParams.sf_query_radius),
+		this);
+
+	for (std::set<SteerLib::SpatialDatabaseItemPtr>::iterator neighbor = _neighbors.begin();
+		neighbor != _neighbors.end(); neighbor++) {
+		if ((*neighbor)->isAgent()) {
+			SteerLib::AgentInterface *other = dynamic_cast<SteerLib::AgentInterface *>(*neighbor);
+			if (id() != other->id() && other->computePenetration(position(), radius()) > 0.000001) {
+				agentRepulsionForce += other->computePenetration(position(), radius()) * _SocialForcesParams.sf_agent_body_force
+				* normalize(position() - other->position());
+			}
+		}
+	}
+
+    return agentRepulsionForce;
 }
 
 
 Util::Vector SocialForcesAgent::calcWallRepulsionForce(float dt)
 {
-    std::cerr<<"<<<calcWallRepulsionForce>>> Please Implement my body\n";
+    Util::Vector wallRepulsionForce = Util::Vector(0,0,0);
 
-    return Util::Vector(0,0,0);
+	std::set<SteerLib::SpatialDatabaseItemPtr> _neighbors;
+	gSpatialDatabase->getItemsInRange(_neighbors,
+		position().x - (radius() + _SocialForcesParams.sf_query_radius),
+		position().x + (radius() + _SocialForcesParams.sf_query_radius),
+		position().z - (radius() + _SocialForcesParams.sf_query_radius),
+		position().z + (radius() + _SocialForcesParams.sf_query_radius),
+		this);
+
+	for (std::set<SteerLib::SpatialDatabaseItemPtr>::iterator neighbor = _neighbors.begin();
+		neighbor != _neighbors.end(); neighbor++) {
+		if (!(*neighbor)->isAgent()) {
+			SteerLib::ObstacleInterface *wall = dynamic_cast<SteerLib::ObstacleInterface *>(*neighbor);
+			if (wall->computePenetration(position(), radius()) > 0.000001) {
+				Util::Vector wallNormal = calcWallNormal(wall);
+				std::pair<Util::Point, Util::Point> edge = calcWallPointsFromNormal(wall, wallNormal);
+
+				std::pair<float, Util::Point> distance = minimum_distance(edge.first, edge.second, position());
+				wallRepulsionForce += wallNormal * (radius() - distance.first) * _SocialForcesParams.sf_body_force;
+			}
+		}
+	}
+
+    return wallRepulsionForce;
 }
 
 
@@ -519,6 +592,7 @@ void SocialForcesAgent::updateAI(float timeStamp, float dt, unsigned int frameNu
 
 	Util::Vector acceleration = (prefForce + repulsionForce + proximityForce) / AGENT_MASS;
 	_velocity = velocity() + acceleration * dt;
+
 	_velocity = clamp(velocity(), _SocialForcesParams.sf_max_speed);
 	_velocity.y=0.0f;
 #ifdef _DEBUG_
@@ -721,8 +795,8 @@ void SocialForcesAgent::draw()
 		Util::DrawLib::drawFlag( this->currentGoal().targetLocation, Color(0.5f,0.8f,0), 2);
 		if ( this->currentGoal().goalType == GOAL_TYPE_AXIS_ALIGNED_BOX_GOAL )
 		{
-			Color color(0.4,0.9,0.4);
-			DrawLib::glColor(color);
+			//Color color(0.4,0.9,0.4);
+			//DrawLib::glColor(color);
 			DrawLib::drawQuad(Point(this->currentGoal().targetRegion.xmin, 0.1, this->currentGoal().targetRegion.zmin),
 					Point(this->currentGoal().targetRegion.xmin, 0.1, this->currentGoal().targetRegion.zmax),
 					Point(this->currentGoal().targetRegion.xmax, 0.1, this->currentGoal().targetRegion.zmax),
