@@ -12,9 +12,6 @@
 // #include <math.h>
 
 
-// #include "util/Geometry.h"
-
-
 /// @file SocialForcesAgent.cpp
 /// @brief Implements the SocialForcesAgent class.
 
@@ -278,7 +275,7 @@ Util::Vector SocialForcesAgent::calcProximityForce(float dt)
 
 Vector SocialForcesAgent::calcGoalForce(Vector _goalDirection, float _dt)
 {
-	Vector goalForce = ((_goalDirection * PERFERED_SPEED) - velocity()) / _dt;
+	Vector goalForce = ((_goalDirection * PREFERED_SPEED) - velocity()) / _dt;
     return goalForce;
 }
 
@@ -310,8 +307,11 @@ Util::Vector SocialForcesAgent::calcAgentRepulsionForce(float dt)
 		if ((*neighbor)->isAgent()) {
 			SteerLib::AgentInterface *other = dynamic_cast<SteerLib::AgentInterface *>(*neighbor);
 			if (id() != other->id() && other->computePenetration(position(), radius()) > 0.000001) {
+				// Repulsion
 				agentRepulsionForce += other->computePenetration(position(), radius()) * _SocialForcesParams.sf_agent_body_force
 				* normalize(position() - other->position());
+
+				// Friction
 			}
 		}
 	}
@@ -341,7 +341,11 @@ Util::Vector SocialForcesAgent::calcWallRepulsionForce(float dt)
 				std::pair<Util::Point, Util::Point> edge = calcWallPointsFromNormal(wall, wallNormal);
 
 				std::pair<float, Util::Point> distance = minimum_distance(edge.first, edge.second, position());
+
+				// Repulsion
 				wallRepulsionForce += wallNormal * (radius() - distance.first) * _SocialForcesParams.sf_body_force;
+
+				// Friction
 			}
 		}
 	}
