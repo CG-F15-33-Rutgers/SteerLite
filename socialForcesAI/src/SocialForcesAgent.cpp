@@ -250,8 +250,9 @@ Util::Vector SocialForcesAgent::calcProximityForce(float dt)
 		if ((*neighbor)->isAgent()) {
 			SteerLib::AgentInterface *other = dynamic_cast<SteerLib::AgentInterface *>(*neighbor);
 			if (id() != other->id()) {
-				proximityForce += (_SocialForcesParams.sf_agent_a * exp(((radius()+other->radius())-(position()-other->position()).length())/_SocialForcesParams.sf_agent_b)) 
-				* normalize(position() - other->position());
+				proximityForce += _SocialForcesParams.sf_agent_a 
+								  * exp(((radius()+other->radius())-(position()-other->position()).length())/_SocialForcesParams.sf_agent_b) 
+								  * normalize(position() - other->position());
 			}
 		}
 		else {
@@ -262,8 +263,9 @@ Util::Vector SocialForcesAgent::calcProximityForce(float dt)
 
 				std::pair<float, Util::Point> distance = minimum_distance(edge.first, edge.second, position());
 
-				proximityForce += (_SocialForcesParams.sf_wall_a * exp( (radius()-distance.first) / _SocialForcesParams.sf_wall_b))
-				* normalize(position() - distance.second);
+				proximityForce += _SocialForcesParams.sf_wall_a 
+								  * exp( (radius()-distance.first) / _SocialForcesParams.sf_wall_b ) 
+								  * normalize(position() - distance.second);
 			}
 		}
 
@@ -275,7 +277,7 @@ Util::Vector SocialForcesAgent::calcProximityForce(float dt)
 
 Vector SocialForcesAgent::calcGoalForce(Vector _goalDirection, float _dt)
 {
-	Vector goalForce = ((_goalDirection * PREFERED_SPEED) - velocity()) / _dt;
+	Vector goalForce = ((_goalDirection * PREFERED_SPEED) - velocity()) / _SocialForcesParams.sf_acceleration;
     return goalForce;
 }
 
@@ -307,11 +309,19 @@ Util::Vector SocialForcesAgent::calcAgentRepulsionForce(float dt)
 		if ((*neighbor)->isAgent()) {
 			SteerLib::AgentInterface *other = dynamic_cast<SteerLib::AgentInterface *>(*neighbor);
 			if (id() != other->id() && other->computePenetration(position(), radius()) > 0.000001) {
+				Util::Vector agentNorm = normalize(position() - other->position());
+
 				// Repulsion
-				agentRepulsionForce += other->computePenetration(position(), radius()) * _SocialForcesParams.sf_agent_body_force
-				* normalize(position() - other->position());
+				agentRepulsionForce += _SocialForcesParams.sf_agent_body_force
+									   * other->computePenetration(position(), radius()) 
+									   * agentNorm;
 
 				// Friction
+				Util::Vector agentTangent = Util::Vector(-agentNorm.z, 0, agentNorm.x);
+				agentRepulsionForce -= _SocialForcesParams.sf_sliding_friction_force // k
+									   * other->computePenetration(position(), radius()) // g
+									   * ((velocity() - other->velocity()) * agentTangent) // tangential velocity difference
+									   * agentTangent; // tangential direction
 			}
 		}
 	}
@@ -346,6 +356,11 @@ Util::Vector SocialForcesAgent::calcWallRepulsionForce(float dt)
 				wallRepulsionForce += wallNormal * (radius() - distance.first) * _SocialForcesParams.sf_body_force;
 
 				// Friction
+				Util::Vector wallTangent = normalize(Util::Vector(velocity().x * abs(wallNormal.z), 0, velocity().z * abs(wallNormal.x)));
+				wallRepulsionForce -= _SocialForcesParams.sf_sliding_friction_force // k
+									  * (radius() - distance.first) // g
+									  * (velocity() * wallTangent)
+									  * wallTangent;
 			}
 		}
 	}
