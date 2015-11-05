@@ -401,7 +401,7 @@ float SteerLib::GJK_EPA::findAngle(Util::Vector vector1, Util::Vector vector2)
 {
 	float dot = dotProduct3d(vector1, vector2);
 	float det = vector1.x * vector2.z - vector1.z *vector2.x;
-	float theta = std::atan2(det, dot);
+	float theta = atan2(det, dot);
 	return theta;
 }
 
