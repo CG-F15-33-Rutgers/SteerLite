@@ -97,7 +97,8 @@ namespace SteerLib
 		*/
 
 		bool computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path = false);
-		std::vector<Util::Point> AStarPlanner::reconstruct_path(std::map<Util::Point, Util::Point> cameFrom, Util::Point current);
+		int getLowestIndex(std::vector<SteerLib::AStarPlannerNode*> openset);
+		std::vector<Util::Point> AStarPlanner::reconstruct_path(Util::Point start, SteerLib::AStarPlannerNode* current);
 		bool containsNode(Util::Point point, std::vector<SteerLib::AStarPlannerNode*> nodeList);
 		int findNode(Util::Point point, std::vector<SteerLib::AStarPlannerNode*> nodeList);
 		double heuristic(Util::Point node, Util::Point goal);

@@ -70,7 +70,7 @@ namespace SteerLib
 	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path)
 	{
 		// Initialize the data structures before search, starting with start node in open set
-		std::priority_queue <SteerLib::AStarPlannerNode*> openset;
+		std::vector<SteerLib::AStarPlannerNode*> openset;
 		std::vector<SteerLib::AStarPlannerNode*> closedset;
 		std::map<Util::Point, Util::Point> cameFrom;
 
@@ -80,50 +80,55 @@ namespace SteerLib
 
 		double f_start = heuristic(start, goal);
 		SteerLib::AStarPlannerNode* startNode = new SteerLib::AStarPlannerNode(start, 0, f_start, NULL);
-		openset.push(startNode);
+		openset.push_back(startNode);
 		//TODO
-		std::cout << "\nIn A*";
+		//std::cout << "\nIn A*";
 
 		int count = 0;
 
 
 		while (!openset.empty()) {
 
+			/*
 			count++;
 			if (count > 3) {
 				break;
 			}
+			*/
 
-			SteerLib::AStarPlannerNode* current = openset.top();
 
-			std::cout << "\nCurrent is " << current->point << " with f value " << current->f;
+			int currentIndex = getLowestIndex(openset);
+			SteerLib::AStarPlannerNode* current = openset.at(currentIndex);
 
+			//std::cout << "\nCurrent is " << current->point << " with f value " << current->f;
+			
+			//std::cout << "\nGoal is " << goal;
 			if (current->point.x == goal.x && current->point.z == goal.z) {
 				// reconstruct path. 
 				// IMPLEMENT PATH METHOD
+				
+				std::vector<Util::Point> new_path = reconstruct_path(start, current);
 
-				std::vector<Util::Point> new_path = reconstruct_path(cameFrom, goal);
-
-				std::cout << "\nConstructing path";
+				//std::cout << "\nConstructing path";
 
 				if (append_to_path) {
-					std::cout << "\nAppending to path";
+					//std::cout << "\nAppending to path";
 					agent_path.insert(agent_path.end(), new_path.begin(), new_path.end());
 				}
 				else {
-					std::cout << "\nNot appending to path";
+					//std::cout << "\nNot appending to path";
 					agent_path = new_path;
 				}
 
 				for (int i = 0; i < agent_path.size(); i++) {
-					std::cout << "\nMoving along path " << agent_path.at(i);
+					//std::cout << "\nMoving along path " << agent_path.at(i);
 				}
 
 				return true;
 			}
 
 			// move current to closedset
-			openset.pop();
+			openset.erase(openset.begin()+currentIndex);
 			closedset.push_back(current);
 
 			// next, we visit all neighbors of current
@@ -131,12 +136,12 @@ namespace SteerLib
 			std::vector<Util::Point> neighborList;
 			bool isNeighborList = AStarPlanner::getNeighborNodes(current, neighborList, nodeList);
 
-			std::cout << "\nVisiting Neighbors";
+			//std::cout << "\nVisiting Neighbors";
 			
 			for (int i = 0; i < neighborList.size(); i++) {
 				Util::Point neighbor = neighborList.at(i);
 				
-				std::cout << "\nExploring neighbor " << neighbor.x << "," << neighbor.z;
+				//std::cout << "\nExploring neighbor " << neighbor.x << "," << neighbor.z;
 				
 				if (findNode(neighbor, closedset) != -1) {
 					continue;
@@ -148,14 +153,13 @@ namespace SteerLib
 				
 				if (tentative_g_score < neighborNode->g) {
 
-					cameFrom[neighbor] = current->point;
-
+					neighborNode->parent = current;
 					neighborNode->g = tentative_g_score;
 					neighborNode->f = tentative_g_score + heuristic(neighbor, goal);
 
-					openset.push(neighborNode);
+					openset.push_back(neighborNode);
 
-					std::cout << "\nUpdated neighbor is " << neighbor.x << "," << neighbor.z << "with f value " << neighborNode->f;
+					//std::cout << "\nUpdated neighbor is " << neighbor.x << "," << neighbor.z << "with f value " << neighborNode->f;
 
 				}
 
@@ -169,16 +173,36 @@ namespace SteerLib
 		return false;
 	}
 
-	std::vector<Util::Point> AStarPlanner::reconstruct_path(std::map<Util::Point, Util::Point> cameFrom, Util::Point current)
+	int AStarPlanner::getLowestIndex(std::vector<SteerLib::AStarPlannerNode*> openset) {
+		double min = openset.front()->f;
+		int index = 0;
+		for (int i = 0; i < openset.size(); i++) {
+			if (openset.at(i)->f < min) {
+				min = openset.at(i)->f;
+				index = i;
+			}
+		}
+		return index;
+	}
+
+	std::vector<Util::Point> AStarPlanner::reconstruct_path(Util::Point start, SteerLib::AStarPlannerNode* current)
 	{
 		std::vector<Util::Point> totalPath;
-		totalPath.push_back(current);
-		while (cameFrom.find(current) != cameFrom.end()) {
-			current = cameFrom[current];
-			totalPath.push_back(current);
+		totalPath.push_back(current->point);
+		while (!(current->parent->point.x == start.x && current->parent->point.z == start.z)) {
+			current = current->parent;
+			totalPath.push_back(current->point);
+		}
+		totalPath.push_back(current->point);
+
+		std::vector<Util::Point> reversePath;
+		int size = totalPath.size();
+		for (int i = 0; i < size; i++) {
+			reversePath.push_back(totalPath.back());
+			totalPath.pop_back();
 		}
 
-		return totalPath;
+		return reversePath;
 	}
 
 	bool AStarPlanner::getNeighborNodes(SteerLib::AStarPlannerNode* current, std::vector<Util::Point>& neighborList, std::vector<SteerLib::AStarPlannerNode*>& nodeList)
@@ -202,7 +226,7 @@ namespace SteerLib
 					if (AStarPlanner::canBeTraversed(currIndex)) {
 						Util::Point currentPoint = Util::Point(i, 0, j);
 
-						std::cout << "\nAdding neighbor point " << currentPoint;
+						//std::cout << "\nAdding neighbor point " << currentPoint;
 
 						if (!containsNode(currentPoint, nodeList)) {
 							SteerLib::AStarPlannerNode* neighbor = new AStarPlannerNode(currentPoint, std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), current);
@@ -240,7 +264,8 @@ namespace SteerLib
 	double AStarPlanner::heuristic(Util::Point node, Util::Point goal)
 	{
 		// change which function this returns to retune A*
-		return AStarPlanner::manhattanHeuristic(node, goal);
+		// return AStarPlanner::manhattanHeuristic(node, goal);
+		return AStarPlanner::euclidianHeuristic(node, goal);
 	}
 
 	double AStarPlanner::manhattanHeuristic(Util::Point node, Util::Point goal)
