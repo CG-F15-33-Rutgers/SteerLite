@@ -72,15 +72,19 @@ namespace SteerLib
 		// Initialize the data structures before search, starting with start node in open set
 		std::vector<SteerLib::AStarPlannerNode*> openset;
 		std::vector<SteerLib::AStarPlannerNode*> closedset;
-		std::map<Util::Point, Util::Point> cameFrom;
+		
 
 		std::vector<SteerLib::AStarPlannerNode*> nodeList;
 
+		int explored = 0; // number of nodes expanded
+		const int weight = 1;
+
 		gSpatialDatabase = _gSpatialDatabase;
 
-		double f_start = heuristic(start, goal);
+		double f_start = weight * heuristic(start, goal);
 		SteerLib::AStarPlannerNode* startNode = new SteerLib::AStarPlannerNode(start, 0, f_start, NULL);
 		openset.push_back(startNode);
+		++explored;
 		//TODO
 		//std::cout << "\nIn A*";
 
@@ -123,6 +127,9 @@ namespace SteerLib
 				for (int i = 0; i < agent_path.size(); i++) {
 					//std::cout << "\nMoving along path " << agent_path.at(i);
 				}
+				printf("\nTotal length of solution path(as number of nodes): %d", new_path.size());
+				printf("\nTotal amount of expanded nodes: %d", explored);
+				
 
 				return true;
 			}
@@ -140,6 +147,7 @@ namespace SteerLib
 			
 			for (int i = 0; i < neighborList.size(); i++) {
 				Util::Point neighbor = neighborList.at(i);
+				double tentative_g_score = 0;
 				
 				//std::cout << "\nExploring neighbor " << neighbor.x << "," << neighbor.z;
 				
@@ -147,7 +155,13 @@ namespace SteerLib
 					continue;
 				}
 				
-				double tentative_g_score = current->g + 1;
+				if (AStarPlanner::areDiagonal(current->point, neighbor)) {
+					tentative_g_score = current->g + 1.5;
+				}
+				else {
+					tentative_g_score = current->g + 1;
+				}
+				
 				int nodeIndex = findNode(neighbor, nodeList);
 				SteerLib::AStarPlannerNode* neighborNode = nodeList.at(nodeIndex);
 				
@@ -155,10 +169,10 @@ namespace SteerLib
 
 					neighborNode->parent = current;
 					neighborNode->g = tentative_g_score;
-					neighborNode->f = tentative_g_score + heuristic(neighbor, goal);
+					neighborNode->f = tentative_g_score + (weight * heuristic(neighbor, goal));
 
 					openset.push_back(neighborNode);
-
+					++explored;
 					//std::cout << "\nUpdated neighbor is " << neighbor.x << "," << neighbor.z << "with f value " << neighborNode->f;
 
 				}
@@ -175,11 +189,24 @@ namespace SteerLib
 
 	int AStarPlanner::getLowestIndex(std::vector<SteerLib::AStarPlannerNode*> openset) {
 		double min = openset.front()->f;
+		double gmin = openset.front()->g;
+		int gIndex = 0;
 		int index = 0;
 		for (int i = 0; i < openset.size(); i++) {
 			if (openset.at(i)->f < min) {
 				min = openset.at(i)->f;
+				gmin = openset.at(i)->g;
+				gIndex = i;
 				index = i;
+			}
+			else if (openset.at(i)->f == min) {
+				// SWITCH comparison here
+				if (gmin > openset.at(i)->g) {
+					index = gIndex;
+				}
+				else {
+					index = i;
+				}
 			}
 		}
 		return index;
@@ -265,7 +292,7 @@ namespace SteerLib
 	{
 		// change which function this returns to retune A*
 		// return AStarPlanner::manhattanHeuristic(node, goal);
-		return AStarPlanner::euclidianHeuristic(node, goal);
+		return AStarPlanner::manhattanHeuristic(node, goal);
 	}
 
 	double AStarPlanner::manhattanHeuristic(Util::Point node, Util::Point goal)
@@ -278,4 +305,14 @@ namespace SteerLib
 		return std::sqrt(std::pow((node.x - goal.x), 2.0) + std::pow((node.z - goal.z), 2.0));
 	}
 
+	bool AStarPlanner::areDiagonal(Util::Point curr, Util::Point neighbor)
+	{
+		int x = curr.x - neighbor.x;
+		int z = curr.z - neighbor.z;
+
+		if (std::abs(x) == std::abs(z)) {
+			return true;
+		}
+		return false;
+	}
 }

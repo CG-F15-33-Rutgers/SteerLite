@@ -105,6 +105,7 @@ namespace SteerLib
 		double manhattanHeuristic(Util::Point node, Util::Point goal);
 		double euclidianHeuristic(Util::Point node, Util::Point goal);
 		bool getNeighborNodes(SteerLib::AStarPlannerNode* current, std::vector<Util::Point>& neighborList, std::vector<SteerLib::AStarPlannerNode*>& nodeList);
+		bool areDiagonal(Util::Point curr, Util::Point neighbor);
 	private:
 		SteerLib::GridDatabase2D * gSpatialDatabase;
 	};
