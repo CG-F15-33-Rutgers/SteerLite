@@ -156,7 +156,8 @@ namespace SteerLib
 				}
 				
 				if (AStarPlanner::areDiagonal(current->point, neighbor)) {
-					tentative_g_score = current->g + 1.5;
+					// change this to increase diagonal cost
+					tentative_g_score = current->g + 1;
 				}
 				else {
 					tentative_g_score = current->g + 1;
@@ -201,7 +202,7 @@ namespace SteerLib
 			}
 			else if (openset.at(i)->f == min) {
 				// SWITCH comparison here
-				if (gmin > openset.at(i)->g) {
+				if (gmin < openset.at(i)->g) {
 					index = gIndex;
 				}
 				else {
@@ -215,11 +216,15 @@ namespace SteerLib
 	std::vector<Util::Point> AStarPlanner::reconstruct_path(Util::Point start, SteerLib::AStarPlannerNode* current)
 	{
 		std::vector<Util::Point> totalPath;
+		current->point = getPointFromGridIndex(gSpatialDatabase->getCellIndexFromLocation(current->point));
+
 		totalPath.push_back(current->point);
 		while (!(current->parent->point.x == start.x && current->parent->point.z == start.z)) {
 			current = current->parent;
+			current->point = getPointFromGridIndex(gSpatialDatabase->getCellIndexFromLocation(current->point));
 			totalPath.push_back(current->point);
 		}
+		current->point = getPointFromGridIndex(gSpatialDatabase->getCellIndexFromLocation(current->point));
 		totalPath.push_back(current->point);
 
 		std::vector<Util::Point> reversePath;
@@ -236,9 +241,10 @@ namespace SteerLib
 	{
 		// First, get coordinates of current point
 		int x_range_min, x_range_max, z_range_min, z_range_max, currIndex;
-		unsigned int currX, currZ;
+		
 		currIndex = gSpatialDatabase->getCellIndexFromLocation(current->point);
-		gSpatialDatabase->getGridCoordinatesFromIndex(currIndex, currX, currZ);
+		
+		
 
 
 		x_range_min = current->point.x - GRID_STEP;
@@ -252,7 +258,7 @@ namespace SteerLib
 				if (!(i == current->point.x && j == current->point.z)) {
 					if (AStarPlanner::canBeTraversed(currIndex)) {
 						Util::Point currentPoint = Util::Point(i, 0, j);
-
+						
 						//std::cout << "\nAdding neighbor point " << currentPoint;
 
 						if (!containsNode(currentPoint, nodeList)) {
@@ -292,7 +298,7 @@ namespace SteerLib
 	{
 		// change which function this returns to retune A*
 		// return AStarPlanner::manhattanHeuristic(node, goal);
-		return AStarPlanner::manhattanHeuristic(node, goal);
+		return AStarPlanner::euclideanHeuristic(node, goal);
 	}
 
 	double AStarPlanner::manhattanHeuristic(Util::Point node, Util::Point goal)
@@ -300,7 +306,7 @@ namespace SteerLib
 		return (std::abs(node.x - goal.x) + std::abs(node.z - goal.z));
 	}
 
-	double AStarPlanner::euclidianHeuristic(Util::Point node, Util::Point goal)
+	double AStarPlanner::euclideanHeuristic(Util::Point node, Util::Point goal)
 	{
 		return std::sqrt(std::pow((node.x - goal.x), 2.0) + std::pow((node.z - goal.z), 2.0));
 	}
