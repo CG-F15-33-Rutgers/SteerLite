@@ -155,7 +155,7 @@ void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialCo
 			throw Util::GenericException("Unsupported goal type; SocialForcesAgent only supports GOAL_TYPE_SEEK_STATIC_TARGET and GOAL_TYPE_AXIS_ALIGNED_BOX_GOAL.");
 		}
 	}
-	computePlan();
+	
 	runLongTermPlanning();
 
 	 //std::cout << "first waypoint: " << _waypoints.front() << " agents position: " << position() << std::endl;
@@ -731,21 +731,27 @@ void SocialForcesAgent::updateLocalTarget()
  */
 bool SocialForcesAgent::runLongTermPlanning()
 {
+	int ret;
 	_midTermPath.clear();
 	//==========================================================================
 
 	// run the main a-star search here
 
 	std::vector<Util::Point> agentPath;
-	agentPath = __path;
-	Util::Point pos =  position();
 	
+	Util::Point pos =  position();
+
+	ret = astar.computePath(agentPath, pos, _goalQueue.front().targetLocation, gSpatialDatabase);
+	if (!ret) {
+		return false;
+	}
+	/*
 	if ( !gSpatialDatabase->findPath(pos, _goalQueue.front().targetLocation,
 			agentPath, (unsigned int) 50000))
 	{
 		return false;
 	}
-
+	*/
 	for  (int i=1; i <  agentPath.size(); i++)
 	{
 		_midTermPath.push_back(agentPath.at(i));
