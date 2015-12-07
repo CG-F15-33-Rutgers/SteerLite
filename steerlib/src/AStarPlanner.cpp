@@ -17,7 +17,7 @@
 
 
 #define COLLISION_COST  1000
-#define GRID_STEP  1
+#define GRID_STEP  .5
 #define OBSTACLE_CLEARANCE 1
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
@@ -36,19 +36,39 @@ namespace SteerLib
 		gSpatialDatabase->getGridCoordinatesFromIndex(current_id, x, z);
 		int x_range_min, x_range_max, z_range_min, z_range_max;
 
+		//std::cout << "\n X is " << x;
+		//std::cout << "\n Z is " << z;
+		
+
 		x_range_min = MAX(x - OBSTACLE_CLEARANCE, 0);
 		x_range_max = MIN(x + OBSTACLE_CLEARANCE, gSpatialDatabase->getNumCellsX());
 
 		z_range_min = MAX(z - OBSTACLE_CLEARANCE, 0);
 		z_range_max = MIN(z + OBSTACLE_CLEARANCE, gSpatialDatabase->getNumCellsZ());
 
+		//std::cout << "\n numcells X is " << gSpatialDatabase->getNumCellsX();
+		//std::cout << "\n numcells Z is " << gSpatialDatabase->getNumCellsZ();
 
-		for (int i = x_range_min; i <= x_range_max; i += GRID_STEP)
+		//std::cout << "\n X min is " << x_range_min;
+		//std::cout << "\n Z min is " << z_range_min;
+
+		//std::cout << "\n X max is " << x_range_max;
+		//std::cout << "\n Z max is " << z_range_max;
+
+
+		for (float i = x_range_min; i <= x_range_max; i += GRID_STEP)
 		{
-			for (int j = z_range_min; j <= z_range_max; j += GRID_STEP)
+			for (float j = z_range_min; j <= z_range_max; j += GRID_STEP)
 			{
 				int index = gSpatialDatabase->getCellIndexFromGridCoords(i, j);
+
+			//	std::cout << "\n index is " << index;
+
 				traversal_cost += gSpatialDatabase->getTraversalCost(index);
+
+				//std::cout << "\n cost at index is " << gSpatialDatabase->getTraversalCost(index);
+				//std::cout << "\n total traversal cost is " << traversal_cost;
+
 
 			}
 		}
@@ -107,11 +127,16 @@ namespace SteerLib
 			//std::cout << "\nCurrent is " << current->point << " with f value " << current->f;
 			
 			//std::cout << "\nGoal is " << goal;
-			if (current->point.x == goal.x && current->point.z == goal.z) {
+
+			float current_diff_x = std::abs(current->point.x - goal.x);
+			float current_diff_z = std::abs(current->point.z - goal.z);
+
+			if (current_diff_x < GRID_STEP && current_diff_z < GRID_STEP) {
 				// reconstruct path. 
 				// IMPLEMENT PATH METHOD
 				
 				std::vector<Util::Point> new_path = reconstruct_path(start, current);
+				new_path.push_back(goal);
 
 				//std::cout << "\nConstructing path";
 
@@ -157,10 +182,10 @@ namespace SteerLib
 				
 				if (AStarPlanner::areDiagonal(current->point, neighbor)) {
 					// change this to increase diagonal cost
-					tentative_g_score = current->g + 1;
+					tentative_g_score = current->g + GRID_STEP;
 				}
 				else {
-					tentative_g_score = current->g + 1;
+					tentative_g_score = current->g + GRID_STEP;
 				}
 				
 				int nodeIndex = findNode(neighbor, nodeList);
@@ -240,8 +265,8 @@ namespace SteerLib
 	bool AStarPlanner::getNeighborNodes(SteerLib::AStarPlannerNode* current, std::vector<Util::Point>& neighborList, std::vector<SteerLib::AStarPlannerNode*>& nodeList)
 	{
 		// First, get coordinates of current point
-		int x_range_min, x_range_max, z_range_min, z_range_max, currIndex;
-		
+		float x_range_min, x_range_max, z_range_min, z_range_max;
+		int currIndex;
 		currIndex = gSpatialDatabase->getCellIndexFromLocation(current->point);
 		
 		
@@ -253,8 +278,8 @@ namespace SteerLib
 		z_range_min = current->point.z - GRID_STEP;
 		z_range_max = current->point.z + GRID_STEP;
 
-		for (int i = x_range_min; i <= x_range_max; i += GRID_STEP) {
-			for (int j = z_range_min; j <= z_range_max; j += GRID_STEP) {
+		for (float i = x_range_min; i <= x_range_max; i += GRID_STEP) {
+			for (float j = z_range_min; j <= z_range_max; j += GRID_STEP) {
 				if (!(i == current->point.x && j == current->point.z)) {
 					if (AStarPlanner::canBeTraversed(currIndex)) {
 						Util::Point currentPoint = Util::Point(i, 0, j);
