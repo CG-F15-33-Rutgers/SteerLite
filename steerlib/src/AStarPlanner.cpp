@@ -17,8 +17,8 @@
 
 
 #define COLLISION_COST  1000
-#define GRID_STEP  0.5
-#define OBSTACLE_CLEARANCE 1
+#define GRID_STEP  1
+#define OBSTACLE_CLEARANCE 0
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
 
@@ -97,7 +97,7 @@ namespace SteerLib
 		std::vector<SteerLib::AStarPlannerNode*> nodeList;
 
 		int explored = 0; // number of nodes expanded
-		const int weight = 1;
+		const int weight = 8;
 
 		gSpatialDatabase = _gSpatialDatabase;
 
