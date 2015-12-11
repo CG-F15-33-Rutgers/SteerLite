@@ -79,6 +79,7 @@ void SocialForcesAgent::disable()
 
 void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialConditions, SteerLib::EngineInterface * engineInfo)
 {
+	float mass_weight = 1.0f;
 	std::string testcase;
 	// compute the "old" bounding box of the agent before it is reset.  its OK that it will be invalid if the agent was previously disabled
 	// because the value is not used in that case.
@@ -159,6 +160,18 @@ void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialCo
 	testcase = engineInfo->getModuleOptions("testCasePlayer").find("testcase")->second;
 	printf("\n%s\n", testcase);
 
+	if (testcase.compare("crowd_crossing")) {
+		if (initialConditions.name.compare("A")) {
+			mass_weight = 1000.0f;
+		}
+	}
+	if (testcase.compare("smiley-face")) {
+		if (initialConditions.name.compare("Big")) {
+			mass_weight = 100.0f;
+			_velocity = (initialConditions.speed * _forward)*0.05;
+		}
+	}
+
 	runLongTermPlanning(testcase);
 
 	 //std::cout << "first waypoint: " << _waypoints.front() << " agents position: " << position() << std::endl;
@@ -190,7 +203,7 @@ void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialCo
 				_SocialForcesParams.sf_acceleration
 			)
 			*
-			MASS;
+			(MASS * mass_weight);
 
 	// _velocity = _prefVelocity;
 #ifdef _DEBUG_ENTROPY

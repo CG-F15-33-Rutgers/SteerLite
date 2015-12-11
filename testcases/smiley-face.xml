@@ -1,0 +1,169 @@
+
+<SteerBenchTestCase xmlns="http://www.magix.ucla.edu/steerbench"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://www.magix.ucla.edu/steerbench 
+                                        TestCaseSchema.xsd">
+
+  <header>
+    <version>1.0</version>
+    <name>smiley-face</name>
+    <worldBounds>
+      <xmin>-100</xmin>
+      <xmax>100</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-100</zmin>
+      <zmax>100</zmax>
+    </worldBounds>
+  </header>
+  
+  
+  <suggestedCameraView>
+    <position> <x>0</x> <y>100</y> <z>-30</z> </position>
+    <lookat> <x>0</x> <y>0</y> <z>0</z> </lookat>
+    <up> <x>0</x> <y>1</y> <z>0</z> </up>
+    <fovy>45</fovy>
+  </suggestedCameraView>
+  
+  <suggestedCameraView>
+	<position> <x>25</x> <y>100</y> <z>0</z> </position>
+    <lookat> <x>0</x> <y>0</y> <z>0</z> </lookat>
+    <up> <x>0</x> <y>1</y> <z>0</z> </up>
+    <fovy>45</fovy>
+  </suggestedCameraView>
+  
+  <suggestedCameraView>
+	<position> <x>50</x> <y>100</y> <z>30</z> </position>
+    <lookat> <x>0</x> <y>0</y> <z>0</z> </lookat>
+    <up> <x>0</x> <y>1</y> <z>0</z> </up>
+    <fovy>45</fovy>
+  </suggestedCameraView>
+  
+  <obstacle>
+    <xmin>-1</xmin>
+    <xmax>1</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-5</zmin>
+    <zmax>-1.5</zmax>
+  </obstacle>
+  
+  <obstacle>
+    <xmin>-1</xmin>
+    <xmax>1</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>1.5</zmin>
+    <zmax>5</zmax>
+  </obstacle>
+  
+  <obstacle>
+    <xmin>-10</xmin>
+    <xmax>-8</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-6.5</zmin>
+    <zmax>6.5</zmax>
+  </obstacle>
+  
+  
+  
+ 
+  
+
+  
+ 
+<obstacle>
+    <xmin>-14</xmin>
+    <xmax>-13</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-12</zmin>
+    <zmax>12</zmax>
+  </obstacle>
+  
+  <obstacle>
+    <xmin>-13</xmin>
+    <xmax>14</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-13.5</zmin>
+    <zmax>-12.5</zmax>
+  </obstacle>
+  
+  <obstacle>
+    <xmin>-13</xmin>
+    <xmax>14</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>12.5</zmin>
+    <zmax>13.5</zmax>
+  </obstacle>
+  
+  <obstacle>
+    <xmin>13</xmin>
+    <xmax>14</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-12</zmin>
+    <zmax>-1.5</zmax>
+  </obstacle>
+  
+  <obstacle>
+    <xmin>13</xmin>
+    <xmax>14</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>1.5</zmin>
+    <zmax>12</zmax>
+  </obstacle>
+  
+  
+  
+  <agentRegion>
+    <numAgents>200</numAgents>
+    <regionBounds>
+      <xmin>-11.5</xmin>
+      <xmax>11.5</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-11.5</zmin>
+      <zmax>11.5</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>1</x> <y>0</y> <z>0</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+	  <color><r>150</r><g>150</g><b>0</b></color>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>100</x> <y>0</y> <z>3</z> </targetLocation>
+        <desiredSpeed>2.3</desiredSpeed>
+        <timeDuration>1000.0</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+
+  </agentRegion>
+  
+  <agent>
+    <name>Big</name>
+    <initialConditions>
+      <radius>5</radius>
+      <position> <x>20</x> <y>0</y> <z>3</z> </position>
+      <direction> <x>0</x> <y>0</y> <z>1</z> </direction>
+      <speed>0</speed>
+	  <color><r>0</r><g>0</g><b>0</b></color>
+    </initialConditions>
+   <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>0</x> <y>0</y> <z>-3</z> </targetLocation>
+        <desiredSpeed>0.1</desiredSpeed>
+        <timeDuration>2000.0</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+
+  </agent>
+
+
+</SteerBenchTestCase>
