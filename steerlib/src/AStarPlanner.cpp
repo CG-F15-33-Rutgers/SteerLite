@@ -97,11 +97,37 @@ namespace SteerLib
 		std::vector<SteerLib::AStarPlannerNode*> nodeList;
 
 		int explored = 0; // number of nodes expanded
-		const int weight = 8;
+		const int weight = 1;
 
 		gSpatialDatabase = _gSpatialDatabase;
+		
+		bool isEuclidean = true;
+		bool egress = false;
+		bool ingress = false;
 
-		double f_start = weight * heuristic(start, goal);
+		if (egress) {
+			if (start.z > 0) {
+				goal = Util::Point(5, 0, 38);
+			}
+			else {
+				goal = Util::Point(5, 0, -38);
+			}
+		}
+		
+
+		if (ingress) {
+			if (goal.z > 0) {
+				start = Util::Point(5, 0, 38);
+			}
+			else {
+				start = Util::Point(5, 0, -38);
+			}
+		}
+
+		
+
+
+		double f_start = weight * heuristic(start, goal, isEuclidean);
 		SteerLib::AStarPlannerNode* startNode = new SteerLib::AStarPlannerNode(start, 0, f_start, NULL);
 		openset.push_back(startNode);
 		++explored;
@@ -195,7 +221,7 @@ namespace SteerLib
 
 					neighborNode->parent = current;
 					neighborNode->g = tentative_g_score;
-					neighborNode->f = tentative_g_score + (weight * heuristic(neighbor, goal));
+					neighborNode->f = tentative_g_score + (weight * heuristic(neighbor, goal, isEuclidean));
 
 					openset.push_back(neighborNode);
 					++explored;
@@ -319,11 +345,16 @@ namespace SteerLib
 	}
 
 	// Wrapper function that allows us to constantly set which heuristic function to employ
-	double AStarPlanner::heuristic(Util::Point node, Util::Point goal)
+	double AStarPlanner::heuristic(Util::Point node, Util::Point goal, bool isEuclidean)
 	{
 		// change which function this returns to retune A*
-		// return AStarPlanner::manhattanHeuristic(node, goal);
-		return AStarPlanner::euclideanHeuristic(node, goal);
+		if (isEuclidean) {
+			return AStarPlanner::euclideanHeuristic(node, goal);
+		}
+		else {
+			return AStarPlanner::manhattanHeuristic(node, goal);
+		}
+		
 	}
 
 	double AStarPlanner::manhattanHeuristic(Util::Point node, Util::Point goal)

@@ -101,7 +101,7 @@ namespace SteerLib
 		std::vector<Util::Point> reconstruct_path(Util::Point start, SteerLib::AStarPlannerNode* current);
 		bool containsNode(Util::Point point, std::vector<SteerLib::AStarPlannerNode*> nodeList);
 		int findNode(Util::Point point, std::vector<SteerLib::AStarPlannerNode*> nodeList);
-		double heuristic(Util::Point node, Util::Point goal);
+		double heuristic(Util::Point node, Util::Point goal, bool isEuclidean);
 		double manhattanHeuristic(Util::Point node, Util::Point goal);
 		double euclideanHeuristic(Util::Point node, Util::Point goal);
 		bool getNeighborNodes(SteerLib::AStarPlannerNode* current, std::vector<Util::Point>& neighborList, std::vector<SteerLib::AStarPlannerNode*>& nodeList);
