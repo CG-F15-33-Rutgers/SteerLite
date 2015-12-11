@@ -81,6 +81,8 @@ void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialCo
 {
 	float mass_weight = 1.0f;
 	std::string testcase;
+	testcase = engineInfo->getModuleOptions("testCasePlayer").find("testcase")->second;
+	
 	// compute the "old" bounding box of the agent before it is reset.  its OK that it will be invalid if the agent was previously disabled
 	// because the value is not used in that case.
 	//std::cout << "resetting agent " << this << std::endl;
@@ -157,8 +159,7 @@ void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialCo
 			throw Util::GenericException("Unsupported goal type; SocialForcesAgent only supports GOAL_TYPE_SEEK_STATIC_TARGET and GOAL_TYPE_AXIS_ALIGNED_BOX_GOAL.");
 		}
 	}
-	testcase = engineInfo->getModuleOptions("testCasePlayer").find("testcase")->second;
-	printf("\n%s\n", testcase);
+
 
 	if (testcase.compare("crowd_crossing")) {
 		if (initialConditions.name.compare("A")) {

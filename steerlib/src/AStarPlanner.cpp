@@ -138,10 +138,10 @@ namespace SteerLib
 
 		if (ingress) {
 			if (goal.z > 0) {
-				start = Util::Point(5, 0, 38);
+				start = Util::Point(6, 0, 38);
 			}
 			else {
-				start = Util::Point(5, 0, -38);
+				start = Util::Point(6, 0, -38);
 			}
 		}
 
