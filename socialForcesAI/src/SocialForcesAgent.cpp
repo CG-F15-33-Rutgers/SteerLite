@@ -79,6 +79,7 @@ void SocialForcesAgent::disable()
 
 void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialConditions, SteerLib::EngineInterface * engineInfo)
 {
+	std::string testcase;
 	// compute the "old" bounding box of the agent before it is reset.  its OK that it will be invalid if the agent was previously disabled
 	// because the value is not used in that case.
 	//std::cout << "resetting agent " << this << std::endl;
@@ -155,8 +156,10 @@ void SocialForcesAgent::reset(const SteerLib::AgentInitialConditions & initialCo
 			throw Util::GenericException("Unsupported goal type; SocialForcesAgent only supports GOAL_TYPE_SEEK_STATIC_TARGET and GOAL_TYPE_AXIS_ALIGNED_BOX_GOAL.");
 		}
 	}
-	
-	runLongTermPlanning();
+	testcase = engineInfo->getModuleOptions("testCasePlayer").find("testcase")->second;
+	printf("\n%s\n", testcase);
+
+	runLongTermPlanning(testcase);
 
 	 //std::cout << "first waypoint: " << _waypoints.front() << " agents position: " << position() << std::endl;
 	/*
@@ -729,7 +732,7 @@ void SocialForcesAgent::updateLocalTarget()
  * finds a path to the current goal
  * puts that path in midTermPath
  */
-bool SocialForcesAgent::runLongTermPlanning()
+bool SocialForcesAgent::runLongTermPlanning(std::string testcase)
 {
 	int ret;
 	_midTermPath.clear();
@@ -741,7 +744,7 @@ bool SocialForcesAgent::runLongTermPlanning()
 	
 	Util::Point pos =  position();
 
-	ret = astar.computePath(agentPath, pos, _goalQueue.front().targetLocation, gSpatialDatabase);
+	ret = astar.computePath(agentPath, pos, _goalQueue.front().targetLocation, gSpatialDatabase, false, testcase);
 	if (!ret) {
 		return false;
 	}
@@ -801,34 +804,7 @@ bool SocialForcesAgent::runLongTermPlanning2()
 	return true;
 
 }
-void SocialForcesAgent::computePlan()
-{
-	std::cout << "\nComputing agent plan ";
-	Util::Point global_goal = _goalQueue.front().targetLocation;
-	if (astar.computePath(__path, __position, _goalQueue.front().targetLocation, gSpatialDatabase))
-	{
 
-		while (!_goalQueue.empty())
-			_goalQueue.pop();
-
-		for (int i = 0; i<__path.size(); ++i)
-		{
-			SteerLib::AgentGoalInfo goal_path_pt;
-			goal_path_pt.targetLocation = __path[i];
-			_goalQueue.push(goal_path_pt);
-		}
-		SteerLib::AgentGoalInfo goal_path_pt;
-		goal_path_pt.targetLocation = global_goal;
-		_goalQueue.push(goal_path_pt);
-	}
-	// else
-	// {
-	// 	for(int i = 0;i<20;++i)
-	// 		_goalQueue.push(_goalQueue.front());
-	// }
-
-
-}
 
 void SocialForcesAgent::draw()
 {

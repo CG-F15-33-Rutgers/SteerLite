@@ -71,8 +71,7 @@ class SocialForcesAgent : public SteerLib::AgentInterface
 
 		// an instance of astart search
 		SteerLib::AStarPlanner astar;
-		// the function that computes all a* points
-		void computePlan();
+		
 
     protected:
         /// Updates position, velocity, and orientation of the agent, given the force and dt time step.
@@ -114,7 +113,7 @@ class SocialForcesAgent : public SteerLib::AgentInterface
 
     private:
         bool runLongTermPlanning2();
-        bool runLongTermPlanning();
+        bool runLongTermPlanning(std::string testcase);
         bool reachedCurrentWaypoint();
         void updateMidTermPath();
         bool hasLineOfSightTo(Util::Point point);

@@ -96,12 +96,12 @@ namespace SteerLib
 		append_to_path : An optional argument to append to agent_path instead of overwriting it.
 		*/
 
-		bool computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path = false);
+		bool computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path = false, std::string testcase = NULL);
 		int getLowestIndex(std::vector<SteerLib::AStarPlannerNode*> openset);
 		std::vector<Util::Point> reconstruct_path(Util::Point start, SteerLib::AStarPlannerNode* current);
 		bool containsNode(Util::Point point, std::vector<SteerLib::AStarPlannerNode*> nodeList);
 		int findNode(Util::Point point, std::vector<SteerLib::AStarPlannerNode*> nodeList);
-		double heuristic(Util::Point node, Util::Point goal);
+		double heuristic(Util::Point node, Util::Point goal, bool isEuclidean);
 		double manhattanHeuristic(Util::Point node, Util::Point goal);
 		double euclideanHeuristic(Util::Point node, Util::Point goal);
 		bool getNeighborNodes(SteerLib::AStarPlannerNode* current, std::vector<Util::Point>& neighborList, std::vector<SteerLib::AStarPlannerNode*>& nodeList);

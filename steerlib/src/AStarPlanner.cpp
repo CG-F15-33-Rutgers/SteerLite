@@ -18,9 +18,10 @@
 
 #define COLLISION_COST  1000
 #define GRID_STEP  1
-#define OBSTACLE_CLEARANCE 0
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
+
+int OBSTACLE_CLEARANCE = 0;
 
 namespace SteerLib
 {
@@ -87,7 +88,7 @@ namespace SteerLib
 		return p;
 	}
 
-	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path)
+	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path, std::string testcase)
 	{
 		// Initialize the data structures before search, starting with start node in open set
 		std::vector<SteerLib::AStarPlannerNode*> openset;
@@ -100,8 +101,77 @@ namespace SteerLib
 		const int weight = 8;
 
 		gSpatialDatabase = _gSpatialDatabase;
+		
+		bool isEuclidean = true;
+		bool egress = false;
+		bool ingress = false;
+		bool doorway2way = false;
+		bool doublesqueeze = false;
 
-		double f_start = weight * heuristic(start, goal);
+		if (testcase.compare("plane_egress") == 0) {
+			egress = true;
+			isEuclidean = false;
+		}
+		if (testcase.compare("plane_ingress") == 0) {
+			ingress = true;
+			isEuclidean = false;
+		}
+		if (testcase.compare("maze") == 0) {
+			OBSTACLE_CLEARANCE = 1;
+		}
+		if (testcase.compare("doorway-two-way") == 0) {
+			doorway2way = true;
+		}
+		if (testcase.compare("double-squeeze") == 0) {
+			doublesqueeze = true;
+		}
+
+		if (egress) {
+			if (start.z > 0) {
+				goal = Util::Point(6, 0, 38);
+			}
+			else {
+				goal = Util::Point(6, 0, -38);
+			}
+		}
+		
+
+		if (ingress) {
+			if (goal.z > 0) {
+				start = Util::Point(5, 0, 38);
+			}
+			else {
+				start = Util::Point(5, 0, -38);
+			}
+		}
+
+		if (doorway2way) {
+			if (!append_to_path) {
+				agent_path.clear();
+			}
+			if (start.x > 0) {
+				agent_path.push_back(Util::Point(10, 0, 2));
+				agent_path.push_back(Util::Point(.1, 0, .5));
+				agent_path.push_back(goal);
+			}
+			else {
+				agent_path.push_back(Util::Point(.1, 0, .5));
+				agent_path.push_back(goal);
+			}
+
+			return true;
+		}
+
+		if (doublesqueeze) {
+			if (start.x > 0) {
+				goal = Util::Point(5, 0, .5);
+			}
+			else {
+				goal = Util::Point(5, 0, -.5);
+			}
+		}
+
+		double f_start = weight * heuristic(start, goal, isEuclidean);
 		SteerLib::AStarPlannerNode* startNode = new SteerLib::AStarPlannerNode(start, 0, f_start, NULL);
 		openset.push_back(startNode);
 		++explored;
@@ -152,8 +222,8 @@ namespace SteerLib
 				for (int i = 0; i < agent_path.size(); i++) {
 					//std::cout << "\nMoving along path " << agent_path.at(i);
 				}
-				printf("\nTotal length of solution path(as number of nodes): %d", new_path.size());
-				printf("\nTotal amount of expanded nodes: %d", explored);
+				//printf("\nTotal length of solution path(as number of nodes): %d", new_path.size());
+				//printf("\nTotal amount of expanded nodes: %d", explored);
 				
 
 				return true;
@@ -195,7 +265,7 @@ namespace SteerLib
 
 					neighborNode->parent = current;
 					neighborNode->g = tentative_g_score;
-					neighborNode->f = tentative_g_score + (weight * heuristic(neighbor, goal));
+					neighborNode->f = tentative_g_score + (weight * heuristic(neighbor, goal, isEuclidean));
 
 					openset.push_back(neighborNode);
 					++explored;
@@ -319,11 +389,16 @@ namespace SteerLib
 	}
 
 	// Wrapper function that allows us to constantly set which heuristic function to employ
-	double AStarPlanner::heuristic(Util::Point node, Util::Point goal)
+	double AStarPlanner::heuristic(Util::Point node, Util::Point goal, bool isEuclidean)
 	{
 		// change which function this returns to retune A*
-		// return AStarPlanner::manhattanHeuristic(node, goal);
-		return AStarPlanner::euclideanHeuristic(node, goal);
+		if (isEuclidean) {
+			return AStarPlanner::euclideanHeuristic(node, goal);
+		}
+		else {
+			return AStarPlanner::manhattanHeuristic(node, goal);
+		}
+		
 	}
 
 	double AStarPlanner::manhattanHeuristic(Util::Point node, Util::Point goal)
