@@ -86,9 +86,9 @@ Options specified by the command line will override options in this configuratio
         <!-- Max number of items a grid cell can contain -->
         <maxItemsPerGridCell>15</maxItemsPerGridCell>
         <!-- Number of cells in the grid along the X axis -->
-        <numCellsX>200</numCellsX>
+        <numCellsX>400</numCellsX>
         <!-- Number of cells in the grid along the Z axis -->
-        <numCellsZ>200</numCellsZ>
+        <numCellsZ>400</numCellsZ>
         <!-- Total size of the grid along the X axis -->
         <sizeX>200</sizeX>
         <!-- Total size of the grid along the Z axis -->

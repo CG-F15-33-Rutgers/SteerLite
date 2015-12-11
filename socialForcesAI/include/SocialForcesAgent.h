@@ -20,6 +20,7 @@
 // #include "SimpleAgent.h"
 // #include "SocialForcesAIModule.h"
 #include "SocialForces_Parameters.h"
+#include "planning/AStarPlanner.h"
 
 
 /**
@@ -68,6 +69,11 @@ class SocialForcesAgent : public SteerLib::AgentInterface
         void insertAgentNeighbor(const SteerLib::AgentInterface * agent, float &rangeSq) {throw Util::GenericException("clearGoals() not implemented yet for SimpleAgent");}
         // bool compareDist(SteerLib::AgentInterface * a1, SteerLib::AgentInterface * a2 );
 
+		// an instance of astart search
+		SteerLib::AStarPlanner astar;
+		// the function that computes all a* points
+		void computePlan();
+
     protected:
         /// Updates position, velocity, and orientation of the agent, given the force and dt time step.
         // void _doEulerStep(const Util::Vector & steeringDecisionForce, float dt);
@@ -90,6 +96,10 @@ class SocialForcesAgent : public SteerLib::AgentInterface
         float _radius;
 
         std::queue<SteerLib::AgentGoalInfo> _goalQueue;
+
+		// A* stuff
+		std::vector<Util::Point> __path;
+		Util::Point __position;
 
         // Stuff specific to RVO
         // should be normalized
