@@ -87,7 +87,7 @@ namespace SteerLib
 		return p;
 	}
 
-	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path)
+	bool AStarPlanner::computePath(std::vector<Util::Point>& agent_path, Util::Point start, Util::Point goal, SteerLib::GridDatabase2D * _gSpatialDatabase, bool append_to_path, std::string testcase)
 	{
 		// Initialize the data structures before search, starting with start node in open set
 		std::vector<SteerLib::AStarPlannerNode*> openset;
